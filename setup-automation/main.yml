@@ -73,27 +73,27 @@
       GIT_REPO: "{{ lookup('ansible.builtin.env', 'GIT_REPO_URL') }}"
       GIT_BRANCH: "{{ lookup('ansible.builtin.env', 'GIT_REPO_REF') }}"
 
-  - name: Output script result
-    ansible.builtin.debug:
-      var: r_result.stdout
-    when: r_script_test.stat.exists
-
-  - name: Write script result to file
-    ansible.builtin.copy:
-      content: "{{ r_result.stdout | default(r_result.stderr) | default(r_result) }}"
-      dest: "/tmp/{{ ansible_host }}-setup-script.out"
-    delegate_to: localhost
+  - name: Read log file if script failed
+    ansible.builtin.slurp:
+      src: "/tmp/setup-scripts/setup-{{ ansible_host }}.log"
+    register: r_log_content
     when:
     - r_result is defined
+    - r_result.rc != 0
+    ignore_errors: true
 
-  - name: Output script result
+  - name: Display log file content on failure
     ansible.builtin.debug:
-      var: r_result
-    when: r_result is defined
+      msg: "{{ r_log_content['content'] | b64decode }}"
+    when:
+    - r_result is defined
+    - r_result.rc != 0
+    - r_log_content is defined
+    - r_log_content.content is defined
 
   - name: Fail if stage was failed
     ansible.builtin.fail:
-      msg: "Setup failed"
+      msg: "Setup script failed with exit code {{ r_result.rc }}. Check log output above."
     when:
     - r_result is defined
     - r_result.rc != 0
