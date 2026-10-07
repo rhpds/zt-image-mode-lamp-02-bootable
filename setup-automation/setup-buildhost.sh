@@ -36,54 +36,84 @@ echo "Pulling bootc base images..." >> /tmp/progress.log
 podman pull $BOOTC_BASE
 podman pull $BOOTC_BUILDER
 
-# Set up TLS registry with ZeroSSL certificates
-echo "Setting up local TLS registry..." >> /tmp/progress.log
-dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
-dnf install -y certbot
+# Set up local registry (TLS if credentials available, insecure otherwise)
+if [ -n "${ZEROSSL_EAB_KEY_ID}" ] && [ -n "${ZEROSSL_HMAC_KEY}" ]; then
+    echo "Setting up local TLS registry with ZeroSSL..." >> /tmp/progress.log
+    dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
+    dnf install -y certbot
 
-CERT_DIR="/etc/letsencrypt/live/registry-${GUID}.${DOMAIN}"
-CERT_MAX_RETRIES=3
-CERT_RETRY=0
-while [ $CERT_RETRY -lt $CERT_MAX_RETRIES ]; do
-    set +x
-    certbot certonly --eab-kid "${ZEROSSL_EAB_KEY_ID}" --eab-hmac-key "${ZEROSSL_HMAC_KEY}" \
-        --server "https://acme.zerossl.com/v2/DV90" --standalone --preferred-challenges http \
-        -d registry-"${GUID}"."${DOMAIN}" --non-interactive --agree-tos -m trackbot@instruqt.com -v
-    rm -f /var/log/letsencrypt/letsencrypt.log
-    set -x
+    CERT_DIR="/etc/letsencrypt/live/registry-${GUID}.${DOMAIN}"
+    CERT_MAX_RETRIES=3
+    CERT_RETRY=0
+    while [ $CERT_RETRY -lt $CERT_MAX_RETRIES ]; do
+        set +x
+        certbot certonly --eab-kid "${ZEROSSL_EAB_KEY_ID}" --eab-hmac-key "${ZEROSSL_HMAC_KEY}" \
+            --server "https://acme.zerossl.com/v2/DV90" --standalone --preferred-challenges http \
+            -d registry-"${GUID}"."${DOMAIN}" --non-interactive --agree-tos -m trackbot@instruqt.com -v
+        rm -f /var/log/letsencrypt/letsencrypt.log
+        set -x
 
-    if [ -f "$CERT_DIR/fullchain.pem" ] && [ -f "$CERT_DIR/privkey.pem" ]; then
-        echo "SSL certificates obtained successfully" >> /tmp/progress.log
-        break
+        if [ -f "$CERT_DIR/fullchain.pem" ] && [ -f "$CERT_DIR/privkey.pem" ]; then
+            echo "SSL certificates obtained successfully" >> /tmp/progress.log
+            break
+        fi
+
+        CERT_RETRY=$((CERT_RETRY + 1))
+        echo "Certificate attempt $CERT_RETRY of $CERT_MAX_RETRIES failed, retrying..." >> /tmp/progress.log
+        sleep 15
+    done
+
+    if [ ! -f "$CERT_DIR/fullchain.pem" ] || [ ! -f "$CERT_DIR/privkey.pem" ]; then
+        echo "WARNING: Failed to obtain SSL certificates, falling back to insecure registry" >> /tmp/progress.log
+        USE_TLS=false
+    else
+        USE_TLS=true
     fi
-
-    CERT_RETRY=$((CERT_RETRY + 1))
-    echo "Certificate attempt $CERT_RETRY of $CERT_MAX_RETRIES failed, retrying..." >> /tmp/progress.log
-    sleep 15
-done
-
-if [ ! -f "$CERT_DIR/fullchain.pem" ] || [ ! -f "$CERT_DIR/privkey.pem" ]; then
-    echo "FATAL: Failed to obtain SSL certificates" >> /tmp/progress.log
-    exit 1
+else
+    echo "WARNING: ZeroSSL credentials not provided, using insecure registry" >> /tmp/progress.log
+    USE_TLS=false
 fi
 
-# Run local TLS registry
-echo "Starting local registry with TLS..." >> /tmp/progress.log
-podman run --privileged -d \
-  --name registry \
-  -p 443:5000 \
-  -v /etc/letsencrypt/live/registry-"${GUID}"."${DOMAIN}"/fullchain.pem:/certs/fullchain.pem \
-  -v /etc/letsencrypt/live/registry-"${GUID}"."${DOMAIN}"/privkey.pem:/certs/privkey.pem \
-  -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/fullchain.pem \
-  -e REGISTRY_HTTP_TLS_KEY=/certs/privkey.pem \
-  quay.io/mmicene/registry:2
+# Run local registry
+if [ "$USE_TLS" = "true" ]; then
+    echo "Starting local registry with TLS..." >> /tmp/progress.log
+    podman run --privileged -d \
+      --name registry \
+      -p 443:5000 \
+      -v /etc/letsencrypt/live/registry-"${GUID}"."${DOMAIN}"/fullchain.pem:/certs/fullchain.pem \
+      -v /etc/letsencrypt/live/registry-"${GUID}"."${DOMAIN}"/privkey.pem:/certs/privkey.pem \
+      -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/fullchain.pem \
+      -e REGISTRY_HTTP_TLS_KEY=/certs/privkey.pem \
+      quay.io/mmicene/registry:2
+    REGISTRY_URL="https://registry-${GUID}.${DOMAIN}"
+else
+    echo "Starting insecure local registry (HTTP only)..." >> /tmp/progress.log
+    podman run --privileged -d \
+      --name registry \
+      -p 5000:5000 \
+      quay.io/mmicene/registry:2
+    REGISTRY_URL="registry-${GUID}.${DOMAIN}:5000"
+
+    # Configure podman to allow insecure registry
+    mkdir -p /etc/containers/registries.conf.d
+    cat <<EOF > /etc/containers/registries.conf.d/insecure-registry.conf
+[[registry]]
+location = "registry-${GUID}.${DOMAIN}:5000"
+insecure = true
+EOF
+fi
 
 # Validate registry is responding
 sleep 5
 REG_MAX_RETRIES=5
 REG_RETRY=0
 while [ $REG_RETRY -lt $REG_MAX_RETRIES ]; do
-    HTTP_CODE=$(curl -sk -o /dev/null -w '%{http_code}' https://registry-${GUID}.${DOMAIN}/v2/ 2>/dev/null)
+    if [ "$USE_TLS" = "true" ]; then
+        HTTP_CODE=$(curl -sk -o /dev/null -w '%{http_code}' https://registry-${GUID}.${DOMAIN}/v2/ 2>/dev/null)
+    else
+        HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://registry-${GUID}.${DOMAIN}:5000/v2/ 2>/dev/null)
+    fi
+
     if [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "200" ]; then
         echo "Registry is responding (HTTP $HTTP_CODE)" >> /tmp/progress.log
         break
