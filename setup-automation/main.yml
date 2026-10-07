@@ -43,8 +43,21 @@
       dest: "/tmp/setup-scripts/setup-{{ ansible_host }}.sh"
     register: r_result
 
+  - name: Check if secrets file exists
+    ansible.builtin.stat:
+      path: ../config/secrets.yaml
+    delegate_to: localhost
+    register: r_secrets_test
+
   - name: Include secrets
     include_vars: ../config/secrets.yaml
+    when: r_secrets_test.stat.exists
+
+  - name: Set default secret values if secrets file doesn't exist
+    set_fact:
+      zerossl_eab_key_id: "{{ lookup('ansible.builtin.env', 'ZEROSSL_EAB_KEY_ID') }}"
+      zerossl_hmac_key: "{{ lookup('ansible.builtin.env', 'ZEROSSL_HMAC_KEY') }}"
+    when: not r_secrets_test.stat.exists
 
   - name: Execute setup script if it exists
     when: r_script_test.stat.exists
