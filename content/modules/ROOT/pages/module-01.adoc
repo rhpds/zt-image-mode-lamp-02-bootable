@@ -1,39 +1,18 @@
-= Writing your lab
+= Package and Deploy Bootable LAMP Image
 
-== Variables
+== Introduction
 
-The `lab_name` var, known as an asciidoc attribute, is set in `site.yml` and can be used to set the lab_name (Example: {lab_name}) or title of your content.
-They are both free to change its value and if you prefer to use a different var name, you can change the value of `lab_name`, for example to `title` in `site.yml` and then reference it in your content as `\{site-title}` (Ex: {site-title}).
+In this module, you'll transform your LAMP application into an **immutable bootable container image** and deploy it as a virtual machine. You'll learn how production deployment with Image Mode differs from the development workflow you learned in Lab 1.
 
-Example:
-[source,asciidoc]
-----
-{my_var}
-----
+**What you'll accomplish:**
 
-Variable rendered:
+* Review the LAMP application files
+* Create a systemd service for database initialization
+* Write a production Containerfile with COPY directives
+* Build a bootable container image
+* Create a VM disk image with bootc-image-builder
+* Deploy and test the application as a virtual machine
 
-{my_var}
+**Time:** Approximately 35 minutes
 
-== Inserting Images
-
-To display an image in your Antora documentation, place the image file in the `assets/images/` folder of the module, then reference it using the `image::[]` macro
-
-=== Basic Syntax
-
-[source,asciidoc]
-----
-image::example-image.png[Example Image, width=100, height=100]
-----
-
-This will render the `example-image.png` image as it follows:
-
-image::example-image.png[Example Image, width=100, height=100]
-
-=== Understanding the Antora Configuration
-
-This lab explains the purpose and structure of the YAML configuration used in an Antora-based documentation site.
-
-=== Basic Structure
-
-The configuration is written in YAML `ui-config.yml` and includes two main sections: `antora` and `tabs`. Click next to know more.
+**Note:** Detailed lab content coming soon. The infrastructure and setup automation are ready.

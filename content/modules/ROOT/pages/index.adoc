@@ -1,0 +1,106 @@
+= Package and Deploy a Bootable LAMP Image
+
+== Overview
+
+Learn how to transform a LAMP application into an **immutable bootable container image** and deploy it as a virtual machine using **Image Mode for RHEL**. This lab teaches the production deployment workflow using bootable containers.
+
+This is **Part 2** of a 2-lab series on **Image Mode for Application Developers**.
+
+== What You'll Learn
+
+In Lab 1, you built a LAMP application using **volume mounts** for fast development iteration. In this lab, you'll package that same application for **production deployment** using Image Mode concepts:
+
+**Development (Lab 1):**
+- Volume mounts (`-v`)
+- Mutable (files can change)
+- Fast iteration
+
+**Production (Lab 2):**
+- COPY directives
+- Immutable (files baked into image)
+- Consistent, repeatable deployments
+
+== Learning Objectives
+
+By completing this lab, you will be able to:
+
+* Create production Containerfiles with COPY directives instead of volume mounts
+* Build bootable container images using `rhel-bootc` base images
+* Create systemd services for application initialization
+* Use `bootc-image-builder` to create VM disk images
+* Deploy bootable images as virtual machines
+* Understand the differences between development and production workflows
+
+== Target Audience
+
+This lab is designed for:
+
+* **Application developers** learning to package apps with Image Mode
+* **Software engineers** deploying containerized applications to production
+* **DevOps engineers** implementing immutable infrastructure
+
+== Prerequisites
+
+**Conceptual:**
+- Understanding of containers and Containerfiles
+- Basic knowledge of LAMP stack (Apache, MariaDB, PHP)
+- Familiarity with systemd services
+
+**Technical:**
+- Completion of Lab 1 is **recommended** but not required
+  - Lab 1 teaches the development workflow
+  - This lab provides the application files for you
+
+== Lab Duration
+
+**Total time:** Approximately 35 minutes
+
+* Review application files and concepts: 5 minutes
+* Create production Containerfile and systemd service: 10 minutes
+* Build bootable image: 5 minutes (+ build wait time)
+* Build disk image: 5 minutes (+ ~8-10 minutes build wait)
+* Deploy and test VM: 5 minutes
+
+== Lab Environment
+
+You will work in a **RHEL 10 build host** with:
+
+* Podman for building bootable images
+* `bootc-image-builder` for creating VM disk images
+* libvirt/KVM for nested virtualization
+* Local TLS registry for image storage
+
+== Application Files Provided
+
+Your environment includes the LAMP application files at `~/lamp-bootc/app/`:
+
+* `db-setup.sql` - MariaDB database schema and sample data
+* `index.php` - PHP application with database connectivity
+* `myapp.conf` - Apache VirtualHost configuration
+
+**If you completed Lab 1:** These are the same files you created.
+
+**If you skipped Lab 1:** These files are provided so you can focus on production packaging.
+
+== What's Different About This Lab?
+
+**From Lab 1 (Development):**
+
+Lab 1 taught you to use **volume mounts** where files live on the host and are mounted into the container. This is perfect for development - you can edit files and see changes immediately.
+
+**This Lab (Production):**
+
+You'll use **COPY directives** in the Containerfile to copy files into the image at build time. The image becomes **immutable** - files can't change after the image is built. To update the application, you build a new image.
+
+This immutability is a key concept in modern production deployments.
+
+## What's Next After This Lab?
+
+After completing this lab, you'll understand:
+
+* How to package applications as bootable images
+* The production deployment workflow with Image Mode
+* When to use development workflows vs. production workflows
+* How bootable containers enable immutable infrastructure
+
+You'll have deployed a complete LAMP application as a bootable virtual machine!

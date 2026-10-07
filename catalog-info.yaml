@@ -1,0 +1,31 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: zt-image-mode-lamp-02-bootable
+  title: "Lab 2: Package and Deploy a Bootable LAMP Image"
+  description: "Transform a LAMP application into an immutable bootable container image and deploy it as a virtual machine using Image Mode for RHEL (Part 2 of 2)"
+  annotations:
+    ph.rhdp.io/content-type: lab
+    ph.rhdp.io/deployment-mode: self_published
+    ph.rhdp.io/created-at: "2026-10-07T00:00:00.000Z"
+    ph.rhdp.io/series: "image-mode-lamp"
+    ph.rhdp.io/series-order: "2"
+  tags:
+    - image-mode
+    - lamp
+    - bootable
+    - bootc
+    - rhel
+    - immutable
+    - virtual-machine
+    - part-2
+spec:
+  type: content
+  lifecycle: experimental
+  owner: brthomas@redhat.com
+  system: publishing-house
+  links:
+    - url: https://github.com/rhpds/zt-image-mode-lamp-02-bootable
+      title: GitHub Repository
+      icon: github

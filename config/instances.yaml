@@ -1,14 +1,46 @@
 ---
 containers: []
 virtualmachines:
-  - name: "host1"
-    image: "rhel-9.5"
-    memory: "2G"
-    cores: 1
-    image_size: "40G"
+  - name: "buildhost"
+    image: "rhel-10.1"
+    memory: "16G"
+    cores: 8
+    image_size: "150G"
+    packages:
+      - podman
+      - skopeo
+      - buildah
+      - libvirt
+      - virt-install
+      - qemu-kvm
+      - libvirt-nss
     tags:
       - key: "AnsibleGroup"
         value: "bastions"
     networks:
       - default
-      - secondary
+    services:
+      - name: registry-http
+        ports:
+          - port: 80
+            protocol: TCP
+            targetPort: 80
+            name: registry-http
+      - name: registry
+        ports:
+          - port: 443
+            protocol: TCP
+            targetPort: 443
+            name: registry
+    routes:
+      - name: registry-http
+        host: registry
+        service: registry-http
+        targetPort: 80
+        tls: false
+        path: "/.well-known/"
+      - name: registry
+        host: registry
+        service: registry
+        targetPort: 443
+        tls: true
