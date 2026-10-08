@@ -61,9 +61,10 @@
 
   - name: Execute setup script if it exists
     when: r_script_test.stat.exists
-    shell: "sh /tmp/setup-scripts/setup-{{ ansible_host }}.sh > /tmp/setup-scripts/setup-{{ ansible_host }}.log 2>&1"
+    shell: "sh /tmp/setup-scripts/setup-{{ ansible_host }}.sh"
     become: true
     register: r_result
+    ignore_errors: true
     environment:
       REGISTRY_PULL_TOKEN: "{{ lookup('ansible.builtin.env', 'REGISTRY_PULL_TOKEN') }}"
       GUID: "{{ lookup('ansible.builtin.env', 'GUID') }}"
@@ -73,23 +74,19 @@
       GIT_REPO: "{{ lookup('ansible.builtin.env', 'GIT_REPO_URL') }}"
       GIT_BRANCH: "{{ lookup('ansible.builtin.env', 'GIT_REPO_REF') }}"
 
-  - name: Read log file if script failed
-    ansible.builtin.slurp:
-      src: "/tmp/setup-scripts/setup-{{ ansible_host }}.log"
-    register: r_log_content
-    when:
-    - r_result is defined
-    - r_result.rc != 0
-    ignore_errors: true
-
-  - name: Display log file content on failure
+  - name: Display script output
     ansible.builtin.debug:
-      msg: "{{ r_log_content['content'] | b64decode }}"
+      msg: "{{ r_result.stdout_lines }}"
     when:
     - r_result is defined
-    - r_result.rc != 0
-    - r_log_content is defined
-    - r_log_content.content is defined
+    - r_result.stdout is defined
+
+  - name: Display script errors
+    ansible.builtin.debug:
+      msg: "{{ r_result.stderr_lines }}"
+    when:
+    - r_result is defined
+    - r_result.stderr is defined
 
   - name: Fail if stage was failed
     ansible.builtin.fail:
