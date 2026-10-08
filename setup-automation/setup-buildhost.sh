@@ -74,6 +74,9 @@ else
     USE_TLS=false
 fi
 
+# Remove existing registry container if present
+podman rm -f registry 2>/dev/null || true
+
 # Run local registry
 if [ "$USE_TLS" = "true" ]; then
     echo "Starting local registry with TLS..." >> /tmp/progress.log
