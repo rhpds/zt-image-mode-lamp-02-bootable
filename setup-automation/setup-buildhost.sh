@@ -112,9 +112,9 @@ REG_MAX_RETRIES=5
 REG_RETRY=0
 while [ $REG_RETRY -lt $REG_MAX_RETRIES ]; do
     if [ "$USE_TLS" = "true" ]; then
-        HTTP_CODE=$(curl -sk -o /dev/null -w '%{http_code}' https://registry-${GUID}.${DOMAIN}/v2/ 2>/dev/null)
+        HTTP_CODE=$(curl -sk -o /dev/null -w '%{http_code}' https://localhost/v2/ 2>/dev/null)
     else
-        HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://registry-${GUID}.${DOMAIN}:5000/v2/ 2>/dev/null)
+        HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5000/v2/ 2>/dev/null)
     fi
 
     if [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "200" ]; then
