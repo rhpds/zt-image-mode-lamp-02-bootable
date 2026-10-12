@@ -1,0 +1,177 @@
+= Build the Bootable Image
+
+Write the production Containerfile, build a bootable container image, and convert it to a disk image you can deploy as a VM.
+
+This module includes wait times (8-10 minutes for disk image creation). You'll understand what's happening during those waits.
+
+*Time: ~17 minutes (includes waits)*
+
+== Write the Production Containerfile
+
+Create the production Containerfile:
+
+[source,bash,role=execute]
+----
+cat > ~/lamp-dev/Containerfile.bootc << 'EOF'
+FROM registry.redhat.io/rhel10/rhel-bootc:10.1
+
+# Install LAMP stack
+RUN dnf install -y mariadb-server httpd php php-mysqlnd && dnf clean all
+
+# Copy application files into the image
+COPY app/index.php /var/www/html/index.php
+COPY app/myapp.conf /etc/httpd/conf.d/myapp.conf
+COPY app/db-setup.sql /var/local/setup.sql
+
+# Copy database initialization service
+COPY mariadb-setup.service /etc/systemd/system/mariadb-setup.service
+
+# Enable services to start on boot
+RUN systemctl enable mariadb httpd mariadb-setup
+
+# Configure SELinux to allow Apache database connections
+RUN setsebool -P httpd_can_network_connect_db on
+
+# Configure firewall to allow HTTP traffic
+RUN firewall-offline-cmd --add-service=http
+EOF
+----
+
+Compare this to the development Containerfile:
+
+[source,bash,role=execute]
+----
+diff ~/lamp-dev/Containerfile ~/lamp-dev/Containerfile.bootc
+----
+
+*Key differences:*
+
+----
+< FROM registry.redhat.io/ubi10/ubi-init
+---
+> FROM registry.redhat.io/rhel10/rhel-bootc:10.1
+> # Copy application files into the image
+> COPY app/index.php /var/www/html/index.php
+> COPY app/myapp.conf /etc/httpd/conf.d/myapp.conf
+> COPY app/db-setup.sql /var/local/setup.sql
+> # Copy database initialization service
+> COPY mariadb-setup.service /etc/systemd/system/mariadb-setup.service
+> # Enable services
+> RUN systemctl enable mariadb httpd mariadb-setup
+> # SELinux and firewall config
+----
+
+The production Containerfile:
+1. Uses `rhel-bootc` base (bootable OS, not just container runtime)
+2. **COPY** files in (not volume mounts)
+3. Enables services for automatic startup
+4. Configures SELinux and firewall at build time
+
+== Build the Bootable Container Image
+
+Build the bootable container:
+
+[source,bash,role=execute]
+----
+podman build -f Containerfile.bootc -t lamp-bootc .
+----
+
+You'll see package installation and file copying. This takes ~2 minutes.
+
+*Expected output (last few lines):*
+
+----
+COMMIT lamp-bootc
+--> 8a9b1c2d3e4f
+Successfully tagged localhost/lamp-bootc:latest
+8a9b1c2d3e4f...
+----
+
+Verify the image:
+
+[source,bash,role=execute]
+----
+podman images lamp-bootc
+----
+
+*Expected output:*
+
+----
+REPOSITORY          TAG         IMAGE ID      CREATED         SIZE
+localhost/lamp-bootc latest     8a9b1c2d3e4f  1 minute ago    920 MB
+----
+
+The image is larger than the dev image (920 MB vs 850 MB) because it includes your application files and additional configuration.
+
+== Create a Configuration File for bootc-image-builder
+
+bootc-image-builder needs a configuration file to define the VM user:
+
+[source,bash,role=execute]
+----
+cat > ~/lamp-dev/config.toml << 'EOF'
+[[customizations.user]]
+name = "core"
+password = "redhat"
+groups = ["wheel"]
+EOF
+----
+
+This creates a user `core` with password `redhat` and sudo access (wheel group).
+
+== Build the Disk Image
+
+Convert the bootable container to a qcow2 disk image:
+
+[source,bash,role=execute]
+----
+podman run --rm --privileged \
+  -v ~/lamp-dev:/output \
+  -v ~/lamp-dev/config.toml:/config.toml \
+  -v /var/lib/containers/storage:/var/lib/containers/storage \
+  registry.redhat.io/rhel10/bootc-image-builder:10.1 \
+  --type qcow2 \
+  --config /config.toml \
+  lamp-bootc
+----
+
+[NOTE]
+====
+**This takes 8-10 minutes.** Here's what's happening:
+
+1. **Pull base layers** (~2 min): Downloads RHEL bootc base if not cached
+2. **Create partition table** (~1 min): Sets up disk layout (boot, root, swap)
+3. **Extract container layers** (~3 min): Unpacks your bootable image to the disk
+4. **Install bootloader** (~1 min): Makes the disk bootable (GRUB)
+5. **Compress to qcow2** (~2 min): Creates the final virtual disk image
+
+This wait is normal. In production CI/CD, this runs once per deployment, not per developer.
+====
+
+While you wait, understand what's different from Lab 1:
+- Lab 1: Container with volume mounts (application runtime)
+- Lab 2: Bootable disk image (complete OS + application)
+
+The disk image includes:
+- RHEL 10 operating system
+- Your LAMP stack (MariaDB, Apache, PHP)
+- Your application code (baked in)
+- Systemd services configured to start on boot
+- Firewall rules, SELinux policies
+
+When this VM boots, it's a complete, ready-to-serve LAMP application. No setup needed.
+
+Once complete, verify the disk image was created:
+
+[source,bash,role=execute]
+----
+ls -lh ~/lamp-dev/qcow2/disk.qcow2
+----
+
+*Expected output:*
+
+----
+-rw-r--r-- 1 root root 1.2G Jan 15 10:45 qcow2/disk.qcow2
+----
+
+You now have a bootable disk image. Next module: deploy it as a VM and test the application.

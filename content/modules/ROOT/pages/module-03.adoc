@@ -1,0 +1,322 @@
+= Deploy and Validate the Bootable Application
+
+Deploy your bootable LAMP image as a virtual machine, verify all services start automatically, and test the application in production mode.
+
+This is the production workflow - boot once, everything works.
+
+*Time: ~10 minutes*
+
+== Copy the Disk Image to libvirt Storage
+
+Move the disk image to libvirt's default storage pool:
+
+[source,bash,role=execute]
+----
+sudo cp ~/lamp-dev/qcow2/disk.qcow2 /var/lib/libvirt/images/lamp-vm.qcow2
+----
+
+Set ownership:
+
+[source,bash,role=execute]
+----
+sudo chown qemu:qemu /var/lib/libvirt/images/lamp-vm.qcow2
+----
+
+The disk image is now ready for VM creation.
+
+== Create and Start the Virtual Machine
+
+Define the VM and import the disk:
+
+[source,bash,role=execute]
+----
+sudo virt-install --name lamp-vm \
+  --disk /var/lib/libvirt/images/lamp-vm.qcow2 \
+  --import \
+  --memory 2048 \
+  --vcpus 2 \
+  --os-variant rhel10-unknown \
+  --graphics none \
+  --noautoconsole
+----
+
+This creates a VM with:
+- 2 GB RAM
+- 2 vCPUs
+- The bootable disk you created
+
+Start the VM:
+
+[source,bash,role=execute]
+----
+sudo virsh start lamp-vm
+----
+
+Wait ~30 seconds for the VM to boot:
+
+[source,bash,role=execute]
+----
+sleep 30
+----
+
+Check the VM is running:
+
+[source,bash,role=execute]
+----
+sudo virsh list
+----
+
+*Expected output:*
+
+----
+ Id   Name      State
+--------------------------
+ 1    lamp-vm   running
+----
+
+Your bootable LAMP application is now running as a VM.
+
+== Get the VM's IP Address
+
+Find the VM's IP address:
+
+[source,bash,role=execute]
+----
+sudo virsh domifaddr lamp-vm
+----
+
+*Expected output:*
+
+----
+ Name       MAC address          Protocol     Address
+-------------------------------------------------------------------------------
+ vnet0      52:54:00:xx:xx:xx    ipv4         192.168.122.XXX/24
+----
+
+Note the IP address (192.168.122.XXX). You'll use it to access the application.
+
+Export it as a variable for easier testing:
+
+[source,bash,role=execute]
+----
+VM_IP=$(sudo virsh domifaddr lamp-vm | grep ipv4 | awk '{print $4}' | cut -d'/' -f1)
+echo "VM IP: $VM_IP"
+----
+
+== SSH into the VM
+
+Connect to the VM:
+
+[source,bash,role=execute]
+----
+ssh core@$VM_IP
+----
+
+When prompted, enter the password: `redhat`
+
+[NOTE]
+====
+If you get a host key warning on first connection, type `yes` to accept.
+====
+
+You're now inside the bootable VM. This is a complete RHEL system that booted from your image.
+
+== Verify Services Started Automatically
+
+Check MariaDB is running:
+
+[source,bash,role=execute]
+----
+systemctl status mariadb --no-pager
+----
+
+*Expected output (key line):*
+
+----
+   Active: active (running) since...
+----
+
+Check Apache is running:
+
+[source,bash,role=execute]
+----
+systemctl status httpd --no-pager
+----
+
+*Expected output (key line):*
+
+----
+   Active: active (running) since...
+----
+
+Check the database initialization service ran:
+
+[source,bash,role=execute]
+----
+systemctl status mariadb-setup --no-pager
+----
+
+*Expected output (key lines):*
+
+----
+   Loaded: loaded (/etc/systemd/system/mariadb-setup.service; enabled)
+   Active: inactive (dead) since...
+----
+
+The service shows `inactive (dead)` with `enabled` - this is correct. It ran once at boot (`Type=oneshot`), initialized the database, and exited. It won't run again.
+
+== Verify the Database Initialized
+
+Query the database:
+
+[source,bash,role=execute]
+----
+mariadb -u hellouser -p'SecurePassword' hellodb -e "SELECT * FROM greetings;"
+----
+
+*Expected output:*
+
+----
++----+----------------------------------+---------------------+
+| id | message                          | created_at          |
++----+----------------------------------+---------------------+
+|  1 | Hello, World!                    | 2025-01-15 10:30:00 |
+|  2 | Welcome to LAMP development!     | 2025-01-15 10:30:00 |
+|  3 | Volume mounts make iteration fast| 2025-01-15 10:30:00 |
++----+----------------------------------+---------------------+
+----
+
+The database initialized automatically on first boot. The data is from your `db-setup.sql` file that was baked into the image.
+
+== Test the Application from Inside the VM
+
+Test the PHP application:
+
+[source,bash,role=execute]
+----
+curl http://localhost
+----
+
+You'll see HTML output with your greeting messages. The full LAMP stack works - MariaDB → PHP → Apache all connected.
+
+Exit the VM:
+
+[source,bash,role=execute]
+----
+exit
+----
+
+You're back on your host.
+
+== Test the Application from Your Host
+
+Test from outside the VM using the IP address:
+
+[source,bash,role=execute]
+----
+curl -s http://$VM_IP | grep -A 1 "Hello, World"
+----
+
+*Expected output:*
+
+----
+<strong>Hello, World!</strong><br>
+<small>Created: 2025-01-15 10:30:00</small>
+----
+
+The application is accessible over the network. Open your browser and navigate to:
+
+----
+http://<VM_IP>
+----
+
+(Replace `<VM_IP>` with the actual IP from earlier, e.g., `http://192.168.122.100`)
+
+You should see your LAMP application running - styled page with three greeting messages from the database.
+
+This is the production deployment. The VM booted with:
+- Operating system configured
+- Services started automatically
+- Database initialized
+- Application code deployed
+- Firewall rules applied
+
+No manual setup. No SSH-ing in to configure things. Just boot and run.
+
+== Understand What You Built
+
+You've completed the full application developer workflow with Image Mode:
+
+**Lab 1 - Development workflow:**
+- Volume mounts (`-v ~/lamp-dev/app:/app`)
+- Mutable files (edit anytime, changes appear instantly)
+- Fast iteration (no rebuild needed)
+- Perfect for development
+
+**Lab 2 - Production workflow:**
+- COPY directives (files baked into image)
+- Immutable deployment (can't edit after build)
+- Bootable disk image (complete OS + application)
+- Perfect for production
+
+**Same application. Two workflows. Different trade-offs.**
+
+The image you built is:
+- **Immutable** - can't SSH in and change files
+- **Reproducible** - every deployment is identical
+- **Versionable** - tag the image, deploy specific versions
+- **Portable** - runs anywhere you can boot a VM
+
+This is different from other Image Mode labs:
+- They build OS images with monitoring tools
+- You built an application deployment artifact
+- They focus on platform engineering
+- You focused on application development
+
+[TIP]
+====
+*What's next?*
+
+In production, you'd:
+1. Push the bootable image to a registry (like quay.io)
+2. Deploy to multiple VMs (cloud, bare metal, edge)
+3. Update by building a new image and rebooting VMs
+4. Rollback by booting the previous image version
+
+Image Mode gives you immutable infrastructure for applications, not just operating systems.
+====
+
+== Stop the VM (Optional)
+
+If you're done testing, stop the VM:
+
+[source,bash,role=execute]
+----
+sudo virsh shutdown lamp-vm
+----
+
+Wait a few seconds, then verify it stopped:
+
+[source,bash,role=execute]
+----
+sudo virsh list --all
+----
+
+*Expected output:*
+
+----
+ Id   Name      State
+--------------------------
+ -    lamp-vm   shut off
+----
+
+To start it again:
+
+[source,bash,role=execute]
+----
+sudo virsh start lamp-vm
+----
+
+The application will boot ready to serve traffic every time.
+
+Congratulations! You've packaged and deployed a database-backed LAMP application as an immutable bootable image using RHEL Image Mode.

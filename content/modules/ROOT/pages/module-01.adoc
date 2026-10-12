@@ -1,18 +1,124 @@
-= Package and Deploy Bootable LAMP Image
+= Prepare Production Configuration
 
-== Introduction
+Your LAMP application works great in development with volume mounts. Now transform it for production - files baked into the image, packaged as a bootable VM.
 
-In this module, you'll transform your LAMP application into an **immutable bootable container image** and deploy it as a virtual machine. You'll learn how production deployment with Image Mode differs from the development workflow you learned in Lab 1.
+In this module, you'll review the application files and create the systemd service that initializes the database on first boot.
 
-**What you'll accomplish:**
+*Time: ~8 minutes*
 
-* Review the LAMP application files
-* Create a systemd service for database initialization
-* Write a production Containerfile with COPY directives
-* Build a bootable container image
-* Create a VM disk image with bootc-image-builder
-* Deploy and test the application as a virtual machine
+== Review the Application Files
 
-**Time:** Approximately 35 minutes
+Your development environment created three application files. In a real workflow, you'd have written these yourself (Lab 1). Here they're provided so you can focus on production packaging.
 
-**Note:** Detailed lab content coming soon. The infrastructure and setup automation are ready.
+Check what's available:
+
+[source,bash,role=execute]
+----
+ls -lh ~/lamp-dev/app/
+----
+
+*Expected output:*
+
+----
+total 12K
+-rw-r--r-- 1 rhel rhel  448 Jan 15 10:30 db-setup.sql
+-rw-r--r-- 1 rhel rhel 2.1K Jan 15 10:30 index.php
+-rw-r--r-- 1 rhel rhel  287 Jan 15 10:30 myapp.conf
+----
+
+These are the same files from Lab 1:
+- `db-setup.sql` - database schema and seed data
+- `index.php` - PHP application that queries the database
+- `myapp.conf` - Apache virtual host configuration
+
+Review the database schema:
+
+[source,bash,role=execute]
+----
+cat ~/lamp-dev/app/db-setup.sql
+----
+
+You'll see the `CREATE DATABASE`, `CREATE USER`, `CREATE TABLE`, and `INSERT` statements that set up the database.
+
+Review the PHP application:
+
+[source,bash,role=execute]
+----
+head -20 ~/lamp-dev/app/index.php
+----
+
+Notice the database connection parameters - these will work inside the bootable VM because the database runs locally.
+
+== Understand the Production Workflow Difference
+
+In Lab 1, you used **volume mounts**:
+- Files lived on your host
+- Container accessed them via mount
+- Edit anytime, changes appeared instantly
+- Mutable (great for development)
+
+In Lab 2, you'll use **COPY directives**:
+- Files baked into the image at build time
+- No volume mounts, no host access
+- Can't edit after build (immutable)
+- Perfect for production
+
+Same application, different workflow. The production Containerfile will `COPY` these files instead of mounting them.
+
+== Create the Database Initialization Service
+
+In development, you manually initialized MariaDB. In production, the database needs to initialize automatically on first boot.
+
+Create a systemd service that runs once:
+
+[source,bash,role=execute]
+----
+cat > ~/lamp-dev/mariadb-setup.service << 'EOF'
+[Unit]
+Description=MariaDB Database Initialization
+After=mariadb.service
+Requires=mariadb.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/mariadb -u root < /var/local/setup.sql
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+----
+
+This service:
+- Runs after MariaDB starts (`After=mariadb.service`)
+- Executes the SQL script once (`Type=oneshot`)
+- Won't run again on subsequent boots (`RemainAfterExit=yes`)
+- Runs automatically on boot (`WantedBy=multi-user.target`)
+
+Verify the service file was created:
+
+[source,bash,role=execute]
+----
+cat ~/lamp-dev/mariadb-setup.service
+----
+
+== Understand the Production Image Structure
+
+Your production Containerfile will:
+
+1. Start from `rhel-bootc:10.1` (bootable base, not ubi-init)
+2. Install the LAMP stack (MariaDB, Apache, PHP)
+3. **COPY** application files into the image (not volume mount)
+4. **COPY** the systemd service into the image
+5. Enable all services to start on boot
+6. Configure SELinux and firewall
+
+The key difference from Lab 1: files are **inside the image**, not mounted from outside.
+
+This makes the image:
+- Immutable (can't edit files after build)
+- Reproducible (every deployment is identical)
+- Portable (entire app packaged in one artifact)
+- Versionable (tag the image, deploy specific versions)
+
+Next module: write the production Containerfile and build the bootable image.
