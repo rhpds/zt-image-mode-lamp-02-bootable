@@ -31,6 +31,19 @@ cat <<EOF> ~/.config/containers/auth.json
   }
 EOF
 
+# Set up registry authentication for rhel user
+mkdir -p /home/rhel/.config/containers
+cat <<EOF> /home/rhel/.config/containers/auth.json
+{
+    "auths": {
+      "registry.redhat.io": {
+        "auth": "${REGISTRY_PULL_TOKEN}"
+      }
+    }
+  }
+EOF
+chown -R rhel:rhel /home/rhel/.config
+
 # Pull required base images
 echo "Pulling bootc base images..." >> /tmp/progress.log
 podman pull $BOOTC_BASE
