@@ -248,7 +248,7 @@ No manual setup. No SSH-ing in to configure things. Just boot and run.
 You've completed the full application developer workflow with Image Mode:
 
 **Lab 1 - Development workflow:**
-- Volume mounts (`-v ~/lamp-dev/app:/app`)
+- Volume mounts (`-v ~/lamp-dev/app:/app` in Lab 1)
 - Mutable files (edit anytime, changes appear instantly)
 - Fast iteration (no rebuild needed)
 - Perfect for development

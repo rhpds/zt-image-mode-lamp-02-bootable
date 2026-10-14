@@ -14,7 +14,7 @@ Check what's available:
 
 [source,bash,role=execute]
 ----
-ls -lh ~/lamp-dev/app/
+ls -lh ~/lamp-bootc/app/
 ----
 
 *Expected output:*
@@ -35,7 +35,7 @@ Review the database schema:
 
 [source,bash,role=execute]
 ----
-cat ~/lamp-dev/app/db-setup.sql
+cat ~/lamp-bootc/app/db-setup.sql
 ----
 
 You'll see the `CREATE DATABASE`, `CREATE USER`, `CREATE TABLE`, and `INSERT` statements that set up the database.
@@ -44,7 +44,7 @@ Review the PHP application:
 
 [source,bash,role=execute]
 ----
-head -20 ~/lamp-dev/app/index.php
+head -20 ~/lamp-bootc/app/index.php
 ----
 
 Notice the database connection parameters - these will work inside the bootable VM because the database runs locally.
@@ -73,7 +73,7 @@ Create a systemd service that runs once:
 
 [source,bash,role=execute]
 ----
-cat > ~/lamp-dev/mariadb-setup.service << 'EOF'
+cat > ~/lamp-bootc/mariadb-setup.service << 'EOF'
 [Unit]
 Description=MariaDB Database Initialization
 After=mariadb.service
@@ -99,7 +99,7 @@ Verify the service file was created:
 
 [source,bash,role=execute]
 ----
-cat ~/lamp-dev/mariadb-setup.service
+cat ~/lamp-bootc/mariadb-setup.service
 ----
 
 == Understand the Production Image Structure

@@ -12,7 +12,7 @@ Create the production Containerfile:
 
 [source,bash,role=execute]
 ----
-cat > ~/lamp-dev/Containerfile.bootc << 'EOF'
+cat > ~/lamp-bootc/Containerfile.bootc << 'EOF'
 FROM registry.redhat.io/rhel10/rhel-bootc:10.1
 
 # Install LAMP stack
@@ -37,31 +37,7 @@ RUN firewall-offline-cmd --add-service=http
 EOF
 ----
 
-Compare this to the development Containerfile:
-
-[source,bash,role=execute]
-----
-diff ~/lamp-dev/Containerfile ~/lamp-dev/Containerfile.bootc
-----
-
-*Key differences:*
-
-----
-< FROM registry.redhat.io/ubi10/ubi-init
----
-> FROM registry.redhat.io/rhel10/rhel-bootc:10.1
-> # Copy application files into the image
-> COPY app/index.php /var/www/html/index.php
-> COPY app/myapp.conf /etc/httpd/conf.d/myapp.conf
-> COPY app/db-setup.sql /var/local/setup.sql
-> # Copy database initialization service
-> COPY mariadb-setup.service /etc/systemd/system/mariadb-setup.service
-> # Enable services
-> RUN systemctl enable mariadb httpd mariadb-setup
-> # SELinux and firewall config
-----
-
-The production Containerfile:
+*Key points about this production Containerfile:*
 1. Uses `rhel-bootc` base (bootable OS, not just container runtime)
 2. **COPY** files in (not volume mounts)
 3. Enables services for automatic startup
@@ -73,6 +49,7 @@ Build the bootable container:
 
 [source,bash,role=execute]
 ----
+cd ~/lamp-bootc
 podman build -f Containerfile.bootc -t lamp-bootc .
 ----
 
@@ -109,7 +86,7 @@ bootc-image-builder needs a configuration file to define the VM user:
 
 [source,bash,role=execute]
 ----
-cat > ~/lamp-dev/config.toml << 'EOF'
+cat > ~/lamp-bootc/config.toml << 'EOF'
 [[customizations.user]]
 name = "core"
 password = "redhat"
@@ -125,9 +102,10 @@ Convert the bootable container to a qcow2 disk image:
 
 [source,bash,role=execute]
 ----
+cd ~/lamp-bootc
 podman run --rm --privileged \
-  -v ~/lamp-dev:/output \
-  -v ~/lamp-dev/config.toml:/config.toml \
+  -v ~/lamp-bootc/output:/output \
+  -v ~/lamp-bootc/config.toml:/config.toml \
   -v /var/lib/containers/storage:/var/lib/containers/storage \
   registry.redhat.io/rhel10/bootc-image-builder:10.1 \
   --type qcow2 \
@@ -165,13 +143,13 @@ Once complete, verify the disk image was created:
 
 [source,bash,role=execute]
 ----
-ls -lh ~/lamp-dev/qcow2/disk.qcow2
+ls -lh ~/lamp-bootc/output/qcow2/disk.qcow2
 ----
 
 *Expected output:*
 
 ----
--rw-r--r-- 1 root root 1.2G Jan 15 10:45 qcow2/disk.qcow2
+-rw-r--r-- 1 root root 1.2G Jan 15 10:45 /home/rhel/lamp-bootc/output/qcow2/disk.qcow2
 ----
 
 You now have a bootable disk image. Next module: deploy it as a VM and test the application.
