@@ -86,6 +86,16 @@ else
     exit 1
 fi
 
+# Create config.toml for bootc-image-builder
+echo "Creating config.toml..." >> /tmp/progress.log
+cat > /home/rhel/lamp-bootc/config.toml << 'CFGEOF'
+[[customizations.user]]
+name = "core"
+password = "redhat"
+groups = ["wheel"]
+CFGEOF
+chown rhel:rhel /home/rhel/lamp-bootc/config.toml
+
 # Use bootc-image-builder to create VM disk image
 echo "Creating VM disk image with bootc-image-builder (this will take 8-10 minutes)..." >> /tmp/progress.log
 echo "Please wait - this is the longest step..." >> /tmp/progress.log
@@ -100,10 +110,11 @@ podman run --rm -it --privileged \
   --pull=newer \
   --security-opt label=type:unconfined_t \
   -v /home/rhel/lamp-bootc/output:/output \
-  -v /root/config.toml:/config.toml \
+  -v /home/rhel/lamp-bootc/config.toml:/config.toml \
   -v /var/lib/containers/storage:/var/lib/containers/storage \
   registry.redhat.io/rhel10/bootc-image-builder:10.1 \
   --type qcow2 \
+  --config /config.toml \
   --local \
   ${IMAGE_NAME} >> /tmp/progress.log 2>&1
 
