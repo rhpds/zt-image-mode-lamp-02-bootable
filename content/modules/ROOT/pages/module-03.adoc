@@ -12,7 +12,7 @@ Move the disk image to libvirt's default storage pool:
 
 [source,bash,role=execute]
 ----
-sudo cp ~/lamp-dev/qcow2/disk.qcow2 /var/lib/libvirt/images/lamp-vm.qcow2
+sudo cp ~/lamp-bootc/output/qcow2/disk.qcow2 /var/lib/libvirt/images/lamp-vm.qcow2
 ----
 
 Set ownership:
