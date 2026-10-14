@@ -15,8 +15,8 @@ Create the production Containerfile:
 cat > ~/lamp-bootc/Containerfile.bootc << 'EOF'
 FROM registry.redhat.io/rhel10/rhel-bootc:10.1
 
-# Install LAMP stack
-RUN dnf install -y mariadb-server httpd php php-mysqlnd && dnf clean all
+# Install LAMP stack and firewalld
+RUN dnf install -y mariadb-server httpd php php-mysqlnd firewalld && dnf clean all
 
 # Copy application files into the image
 COPY app/index.php /var/www/html/index.php

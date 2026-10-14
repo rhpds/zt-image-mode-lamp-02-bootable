@@ -37,8 +37,8 @@ cat > /home/rhel/lamp-bootc/Containerfile.bootc << 'EOF'
 # Production LAMP Stack - Bootable Container Image
 FROM registry.redhat.io/rhel10/rhel-bootc:10.1
 
-# Install LAMP stack
-RUN dnf install -y mariadb-server httpd php php-mysqlnd && \
+# Install LAMP stack and firewalld
+RUN dnf install -y mariadb-server httpd php php-mysqlnd firewalld && \
     dnf clean all
 
 # Copy application files (immutable - baked into image)
