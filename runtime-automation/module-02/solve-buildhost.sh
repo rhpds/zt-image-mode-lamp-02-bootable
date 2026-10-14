@@ -7,12 +7,10 @@ set -e
 echo "Solving Module 02..." >> /tmp/progress.log
 echo "Timestamp: $(date)" >> /tmp/progress.log
 
-# Get environment variables
-GUID="${GUID}"
-DOMAIN="${DOMAIN:-instruqt.io}"
-IMAGE_REF="registry-${GUID}.${DOMAIN}/lamp-bootc"
+# Use local image name (not registry reference - matches what content teaches)
+IMAGE_NAME="lamp-bootc"
 
-echo "Using image reference: $IMAGE_REF" >> /tmp/progress.log
+echo "Using image name: $IMAGE_NAME" >> /tmp/progress.log
 
 # Ensure directory exists
 mkdir -p /home/rhel/lamp-bootc/app
@@ -62,21 +60,16 @@ fi
 # Build bootable container image
 echo "Building bootable container image (this may take 2-3 minutes)..." >> /tmp/progress.log
 cd /home/rhel/lamp-bootc
-su - rhel -c "cd ~/lamp-bootc && podman build -f Containerfile.bootc -t ${IMAGE_REF}:latest ." >> /tmp/progress.log 2>&1
+su - rhel -c "cd ~/lamp-bootc && podman build -f Containerfile.bootc -t ${IMAGE_NAME} ." >> /tmp/progress.log 2>&1
 
 # Verify image was built
-if su - rhel -c "podman images ${IMAGE_REF}" | grep -q lamp-bootc; then
+if su - rhel -c "podman images ${IMAGE_NAME}" | grep -q lamp-bootc; then
     echo "Bootable image built successfully" >> /tmp/progress.log
-    su - rhel -c "podman images ${IMAGE_REF}" >> /tmp/progress.log
+    su - rhel -c "podman images ${IMAGE_NAME}" >> /tmp/progress.log
 else
     echo "ERROR: Bootable image NOT built!" >> /tmp/progress.log
     exit 1
 fi
-
-# Push image to local registry
-echo "Pushing image to local registry..." >> /tmp/progress.log
-su - rhel -c "podman push ${IMAGE_REF}:latest --tls-verify=false" >> /tmp/progress.log 2>&1
-echo "Image pushed to registry" >> /tmp/progress.log
 
 # Use bootc-image-builder to create VM disk image
 echo "Creating VM disk image with bootc-image-builder (this will take 8-10 minutes)..." >> /tmp/progress.log
@@ -97,8 +90,7 @@ podman run --rm -it --privileged \
   registry.redhat.io/rhel10/bootc-image-builder:10.1 \
   --type qcow2 \
   --local \
-  --tls-verify=false \
-  ${IMAGE_REF}:latest >> /tmp/progress.log 2>&1
+  ${IMAGE_NAME} >> /tmp/progress.log 2>&1
 
 # Verify disk image was created
 if [ -f /home/rhel/lamp-bootc/output/qcow2/disk.qcow2 ]; then

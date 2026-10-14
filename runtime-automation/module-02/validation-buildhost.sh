@@ -6,10 +6,8 @@ set -e
 
 echo "Validating Module 02..." >> /tmp/progress.log
 
-# Get environment variables
-GUID="${GUID}"
-DOMAIN="${DOMAIN:-instruqt.io}"
-IMAGE_REF="registry-${GUID}.${DOMAIN}/lamp-bootc"
+# Use local image name (matches what content teaches)
+IMAGE_NAME="lamp-bootc"
 
 # Check if Containerfile.bootc exists
 if [ ! -f /home/rhel/lamp-bootc/Containerfile.bootc ]; then
@@ -39,8 +37,9 @@ if ! grep -q "COPY mariadb-setup.service" /home/rhel/lamp-bootc/Containerfile.bo
 fi
 
 # Check if bootable image was built
-if ! su - rhel -c "podman images ${IMAGE_REF}" | grep -q lamp-bootc; then
+if ! su - rhel -c "podman images ${IMAGE_NAME}" | grep -q lamp-bootc; then
     echo "FAIL: Bootable container image not found" >> /tmp/progress.log
+    su - rhel -c "podman images" >> /tmp/progress.log
     exit 1
 fi
 
