@@ -16,6 +16,21 @@ echo "Using image name: $IMAGE_NAME" >> /tmp/progress.log
 mkdir -p /home/rhel/lamp-bootc/app
 chown -R rhel:rhel /home/rhel/lamp-bootc
 
+# Ensure all prerequisite files exist (from Module 01)
+echo "Checking prerequisite files..." >> /tmp/progress.log
+if [ ! -f /home/rhel/lamp-bootc/app/db-setup.sql ] || \
+   [ ! -f /home/rhel/lamp-bootc/app/index.php ] || \
+   [ ! -f /home/rhel/lamp-bootc/app/myapp.conf ] || \
+   [ ! -f /home/rhel/lamp-bootc/mariadb-setup.service ]; then
+    echo "Missing prerequisite files - running Module 01 solve first..." >> /tmp/progress.log
+    /root/runtime-automation/module-01/solve-buildhost.sh
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to create prerequisite files" >> /tmp/progress.log
+        exit 1
+    fi
+fi
+echo "All prerequisite files verified" >> /tmp/progress.log
+
 # Create production Containerfile.bootc
 echo "Creating Containerfile.bootc..." >> /tmp/progress.log
 cat > /home/rhel/lamp-bootc/Containerfile.bootc << 'EOF'

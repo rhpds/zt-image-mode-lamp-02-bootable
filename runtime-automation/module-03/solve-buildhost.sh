@@ -12,12 +12,24 @@ VM_NAME="lamp-vm"
 DISK_SOURCE="/home/rhel/lamp-bootc/output/qcow2/disk.qcow2"
 DISK_TARGET="/var/lib/libvirt/images/lamp-vm.qcow2"
 
-# Verify disk image exists
+# Verify disk image exists (from Module 02)
 if [ ! -f "$DISK_SOURCE" ]; then
-    echo "ERROR: Disk image not found at $DISK_SOURCE" >> /tmp/progress.log
-    exit 1
+    echo "Disk image not found - running Module 02 solve first..." >> /tmp/progress.log
+    echo "This will take 10-15 minutes (building bootable image)..." >> /tmp/progress.log
+    /root/runtime-automation/module-02/solve-buildhost.sh
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to create disk image" >> /tmp/progress.log
+        exit 1
+    fi
+    # Verify disk was created
+    if [ ! -f "$DISK_SOURCE" ]; then
+        echo "ERROR: Disk image still not found after Module 02 solve" >> /tmp/progress.log
+        ls -la /home/rhel/lamp-bootc/output/ >> /tmp/progress.log 2>&1 || echo "output dir not found" >> /tmp/progress.log
+        exit 1
+    fi
 fi
-echo "Disk image found" >> /tmp/progress.log
+echo "Disk image found at $DISK_SOURCE" >> /tmp/progress.log
+ls -lh "$DISK_SOURCE" >> /tmp/progress.log
 
 # Stop and destroy existing VM if present
 echo "Cleaning up any existing VM..." >> /tmp/progress.log
