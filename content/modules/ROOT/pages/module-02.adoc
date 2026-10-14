@@ -45,12 +45,12 @@ EOF
 
 == Build the Bootable Container Image
 
-Build the bootable container:
+Build the bootable container as root (bootc-image-builder will need to access it):
 
 [source,bash,role=execute]
 ----
 cd ~/lamp-bootc
-podman build -f Containerfile.bootc -t lamp-bootc .
+sudo podman build -f Containerfile.bootc -t lamp-bootc .
 ----
 
 You'll see package installation and file copying. This takes ~2 minutes.
@@ -68,7 +68,7 @@ Verify the image:
 
 [source,bash,role=execute]
 ----
-podman images lamp-bootc
+sudo podman images lamp-bootc
 ----
 
 *Expected output:*
@@ -103,7 +103,7 @@ Convert the bootable container to a qcow2 disk image:
 [source,bash,role=execute]
 ----
 cd ~/lamp-bootc
-podman run --rm --privileged \
+sudo podman run --rm --privileged \
   -v ~/lamp-bootc/output:/output \
   -v ~/lamp-bootc/config.toml:/config.toml \
   -v /var/lib/containers/storage:/var/lib/containers/storage \

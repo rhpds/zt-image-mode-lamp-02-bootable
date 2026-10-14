@@ -72,15 +72,15 @@ else
     exit 1
 fi
 
-# Build bootable container image
+# Build bootable container image as root (bootc-image-builder needs access to it)
 echo "Building bootable container image (this may take 2-3 minutes)..." >> /tmp/progress.log
 cd /home/rhel/lamp-bootc
-su - rhel -c "cd ~/lamp-bootc && podman build -f Containerfile.bootc -t ${IMAGE_NAME} ." >> /tmp/progress.log 2>&1
+podman build -f Containerfile.bootc -t ${IMAGE_NAME} . >> /tmp/progress.log 2>&1
 
 # Verify image was built
-if su - rhel -c "podman images ${IMAGE_NAME}" | grep -q lamp-bootc; then
+if podman images ${IMAGE_NAME} | grep -q lamp-bootc; then
     echo "Bootable image built successfully" >> /tmp/progress.log
-    su - rhel -c "podman images ${IMAGE_NAME}" >> /tmp/progress.log
+    podman images ${IMAGE_NAME} >> /tmp/progress.log
 else
     echo "ERROR: Bootable image NOT built!" >> /tmp/progress.log
     exit 1

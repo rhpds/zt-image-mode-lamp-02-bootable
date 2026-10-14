@@ -45,10 +45,10 @@ if ! grep -q "COPY mariadb-setup.service" /home/rhel/lamp-bootc/Containerfile.bo
     exit 1
 fi
 
-# Check if bootable image was built
-if ! su - rhel -c "podman images ${IMAGE_NAME}" | grep -q lamp-bootc; then
+# Check if bootable image was built (in root's storage)
+if ! podman images ${IMAGE_NAME} | grep -q lamp-bootc; then
     echo "FAIL: Bootable container image not found" >> /tmp/progress.log
-    su - rhel -c "podman images" >> /tmp/progress.log
+    podman images >> /tmp/progress.log
     exit 1
 fi
 
