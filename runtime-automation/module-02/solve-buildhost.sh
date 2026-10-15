@@ -34,32 +34,27 @@ echo "All prerequisite files verified" >> /tmp/progress.log
 # Create production Containerfile.bootc
 echo "Creating Containerfile.bootc..." >> /tmp/progress.log
 cat > /home/rhel/lamp-bootc/Containerfile.bootc << 'EOF'
-# Production LAMP Stack - Bootable Container Image
 FROM registry.redhat.io/rhel10/rhel-bootc:10.1
 
 # Install LAMP stack and firewalld
-RUN dnf install -y mariadb-server httpd php php-mysqlnd firewalld && \
-    dnf clean all
+RUN dnf install -y mariadb-server httpd php php-mysqlnd firewalld && dnf clean all
 
-# Copy application files (immutable - baked into image)
-COPY app/db-setup.sql /var/local/setup.sql
+# Copy application files into the image
 COPY app/index.php /var/www/html/index.php
 COPY app/myapp.conf /etc/httpd/conf.d/myapp.conf
+COPY app/db-setup.sql /var/local/setup.sql
 
-# Copy and install systemd service for database initialization
+# Copy database initialization service
 COPY mariadb-setup.service /etc/systemd/system/mariadb-setup.service
 
 # Enable services to start on boot
 RUN systemctl enable mariadb httpd mariadb-setup
 
-# Configure SELinux for Apache to connect to database
+# Configure SELinux to allow Apache database connections
 RUN setsebool -P httpd_can_network_connect_db on
 
-# Configure firewall to allow HTTP
+# Configure firewall to allow HTTP traffic
 RUN firewall-offline-cmd --add-service=http
-
-# Expose Apache port
-EXPOSE 80
 EOF
 chown rhel:rhel /home/rhel/lamp-bootc/Containerfile.bootc
 

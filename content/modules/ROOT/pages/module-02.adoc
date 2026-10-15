@@ -74,11 +74,11 @@ sudo podman images lamp-bootc
 *Expected output:*
 
 ----
-REPOSITORY          TAG         IMAGE ID      CREATED         SIZE
-localhost/lamp-bootc latest     8a9b1c2d3e4f  1 minute ago    920 MB
+REPOSITORY            TAG         IMAGE ID      CREATED             SIZE
+localhost/lamp-bootc  latest      12e2d70ec86d  About a minute ago  ~2 GB
 ----
 
-The image is larger than the dev image (920 MB vs 850 MB) because it includes your application files and additional configuration.
+The bootable image is approximately 2 GB because it includes the complete RHEL bootc base, LAMP stack, firewalld, and your application files.
 
 == Create a Configuration File for bootc-image-builder
 
