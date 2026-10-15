@@ -6,6 +6,11 @@ This is the production workflow - boot once, everything works.
 
 *Time: ~10 minutes*
 
+[IMPORTANT]
+====
+**Prerequisite:** Module 02 must be complete before starting this module. The disk image (`~/lamp-bootc/output/qcow2/disk.qcow2`) must exist. If you haven't completed Module 02, go back and run it first (takes 10-15 minutes).
+====
+
 == Copy the Disk Image to libvirt Storage
 
 Move the disk image to libvirt's default storage pool:
@@ -102,6 +107,16 @@ Export it as a variable for easier testing:
 VM_IP=$(sudo virsh domifaddr lamp-vm | grep ipv4 | awk '{print $4}' | cut -d'/' -f1)
 echo "VM IP: $VM_IP"
 ----
+
+[NOTE]
+====
+If you used the solve button, you can also get the IP with:
+[source,bash]
+----
+source ~/.lamp-vm-ip
+echo "VM IP: $VM_IP"
+----
+====
 
 == SSH into the VM
 

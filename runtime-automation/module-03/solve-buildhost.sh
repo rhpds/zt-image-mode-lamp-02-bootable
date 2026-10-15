@@ -14,19 +14,12 @@ DISK_TARGET="/var/lib/libvirt/images/lamp-vm.qcow2"
 
 # Verify disk image exists (from Module 02)
 if [ ! -f "$DISK_SOURCE" ]; then
-    echo "Disk image not found - running Module 02 solve first..." >> /tmp/progress.log
-    echo "This will take 10-15 minutes (building bootable image)..." >> /tmp/progress.log
-    /root/runtime-automation/module-02/solve-buildhost.sh
-    if [ $? -ne 0 ]; then
-        echo "ERROR: Failed to create disk image" >> /tmp/progress.log
-        exit 1
-    fi
-    # Verify disk was created
-    if [ ! -f "$DISK_SOURCE" ]; then
-        echo "ERROR: Disk image still not found after Module 02 solve" >> /tmp/progress.log
-        ls -la /home/rhel/lamp-bootc/output/ >> /tmp/progress.log 2>&1 || echo "output dir not found" >> /tmp/progress.log
-        exit 1
-    fi
+    echo "ERROR: Disk image not found at $DISK_SOURCE" >> /tmp/progress.log
+    echo "You must complete Module 02 first to create the disk image." >> /tmp/progress.log
+    echo "Module 02 takes 10-15 minutes to build the bootable image." >> /tmp/progress.log
+    echo "Please run the Module 02 solve button and wait for it to complete." >> /tmp/progress.log
+    ls -la /home/rhel/lamp-bootc/output/ >> /tmp/progress.log 2>&1 || echo "output dir not found" >> /tmp/progress.log
+    exit 1
 fi
 echo "Disk image found at $DISK_SOURCE" >> /tmp/progress.log
 ls -lh "$DISK_SOURCE" >> /tmp/progress.log
@@ -123,4 +116,12 @@ echo "Module 03 solve completed successfully" >> /tmp/progress.log
 echo "VM Name: $VM_NAME" >> /tmp/progress.log
 echo "VM IP: $VM_IP" >> /tmp/progress.log
 echo "SSH: ssh -i $SSH_KEY core@$VM_IP" >> /tmp/progress.log
+
+# Write VM_IP to file for rhel user to source
+cat > /home/rhel/.lamp-vm-ip << EOF
+export VM_IP=$VM_IP
+EOF
+chown rhel:rhel /home/rhel/.lamp-vm-ip
+
+echo "VM_IP saved to ~/.lamp-vm-ip (run: source ~/.lamp-vm-ip)" >> /tmp/progress.log
 exit 0
