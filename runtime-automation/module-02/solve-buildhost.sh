@@ -100,7 +100,7 @@ rm -rf /home/rhel/lamp-bootc/output
 mkdir -p /home/rhel/lamp-bootc/output
 chown rhel:rhel /home/rhel/lamp-bootc/output
 
-# Run bootc-image-builder
+# Run bootc-image-builder (use localhost/lamp-bootc to resolve correctly)
 podman run --rm -it --privileged \
   --pull=newer \
   --security-opt label=type:unconfined_t \
@@ -111,7 +111,7 @@ podman run --rm -it --privileged \
   --type qcow2 \
   --config /config.toml \
   --local \
-  ${IMAGE_NAME} >> /tmp/progress.log 2>&1
+  localhost/${IMAGE_NAME} >> /tmp/progress.log 2>&1
 
 # Verify disk image was created
 if [ -f /home/rhel/lamp-bootc/output/qcow2/disk.qcow2 ]; then

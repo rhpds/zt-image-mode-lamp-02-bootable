@@ -111,7 +111,7 @@ sudo podman run --rm --privileged \
   --type qcow2 \
   --config /config.toml \
   --local \
-  lamp-bootc
+  localhost/lamp-bootc
 ----
 
 [NOTE]
