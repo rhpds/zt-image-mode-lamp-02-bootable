@@ -50,6 +50,10 @@ COPY mariadb-setup.service /etc/systemd/system/mariadb-setup.service
 # Enable services to start on boot
 RUN systemctl enable mariadb httpd mariadb-setup
 
+# Enable SSH password authentication
+RUN sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
+    sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
 # Configure SELinux to allow Apache database connections
 RUN setsebool -P httpd_can_network_connect_db on
 
