@@ -164,7 +164,7 @@ Requires=mariadb.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/mariadb -u root < /var/local/setup.sql
+ExecStart=/bin/bash -c 'for i in {1..30}; do cat /var/local/setup.sql | mariadb -u root && break || sleep 1; done'
 RemainAfterExit=yes
 
 [Install]
