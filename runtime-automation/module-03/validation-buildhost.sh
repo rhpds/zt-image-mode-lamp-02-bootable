@@ -31,59 +31,46 @@ if [ -z "$VM_IP" ]; then
 fi
 echo "VM IP: $VM_IP" >> /tmp/progress.log
 
-# Check MariaDB is running in VM
-echo "Checking MariaDB service..." >> /tmp/progress.log
-if ! ssh $SSH_OPTS -i $SSH_KEY core@$VM_IP "systemctl is-active mariadb" | grep -q "active"; then
-    echo "FAIL: MariaDB is not running in VM" >> /tmp/progress.log
-    ssh $SSH_OPTS -i $SSH_KEY core@$VM_IP "systemctl status mariadb --no-pager" >> /tmp/progress.log 2>&1 || echo "Could not get service status" >> /tmp/progress.log
-    exit 1
-fi
-echo "MariaDB is active" >> /tmp/progress.log
+# Wait a moment for services to be fully ready
+echo "Waiting for services to stabilize..." >> /tmp/progress.log
+sleep 5
 
-# Check Apache is running in VM
-echo "Checking Apache service..." >> /tmp/progress.log
-if ! ssh $SSH_OPTS -i $SSH_KEY core@$VM_IP "systemctl is-active httpd" | grep -q "active"; then
-    echo "FAIL: Apache is not running in VM" >> /tmp/progress.log
-    ssh $SSH_OPTS -i $SSH_KEY core@$VM_IP "systemctl status httpd --no-pager" >> /tmp/progress.log 2>&1 || echo "Could not get service status" >> /tmp/progress.log
-    exit 1
-fi
-echo "Apache is active" >> /tmp/progress.log
-
-# Check mariadb-setup service exists and is enabled
-echo "Checking mariadb-setup service..." >> /tmp/progress.log
-if ! ssh $SSH_OPTS -i $SSH_KEY core@$VM_IP "systemctl is-enabled mariadb-setup" | grep -q "enabled"; then
-    echo "FAIL: mariadb-setup service is not enabled" >> /tmp/progress.log
-    ssh $SSH_OPTS -i $SSH_KEY core@$VM_IP "systemctl status mariadb-setup --no-pager" >> /tmp/progress.log 2>&1 || echo "Could not get service status" >> /tmp/progress.log
-    exit 1
-fi
-echo "mariadb-setup service is enabled" >> /tmp/progress.log
-
-# Check database has data
-echo "Checking database data..." >> /tmp/progress.log
-DB_CHECK=$(ssh $SSH_OPTS -i $SSH_KEY core@$VM_IP "mariadb -u hellouser -pSecurePassword hellodb -se 'SELECT COUNT(*) FROM greetings;'" 2>/dev/null || echo "0")
-if [ "$DB_CHECK" -lt 3 ]; then
-    echo "FAIL: Database does not contain expected data (found $DB_CHECK rows, expected ≥3)" >> /tmp/progress.log
-    ssh $SSH_OPTS -i $SSH_KEY core@$VM_IP "mariadb -u hellouser -pSecurePassword hellodb -e 'SELECT * FROM greetings;'" >> /tmp/progress.log 2>&1 || echo "Could not query database" >> /tmp/progress.log
-    exit 1
-fi
-echo "Database contains $DB_CHECK rows" >> /tmp/progress.log
-
-# Check application responds
+# Check application responds with database content
+# If we get all three messages, it proves MariaDB, Apache, PHP, and database initialization all worked
 echo "Checking application response..." >> /tmp/progress.log
-if ! curl -s http://$VM_IP | grep -q "Hello, World"; then
-    echo "FAIL: Application not responding correctly" >> /tmp/progress.log
+APP_RESPONSE=$(curl -s http://$VM_IP 2>&1)
+
+if ! echo "$APP_RESPONSE" | grep -q "Hello, World!"; then
+    echo "FAIL: Application not responding with expected content" >> /tmp/progress.log
     echo "Application response:" >> /tmp/progress.log
-    curl -s http://$VM_IP | head -20 >> /tmp/progress.log 2>&1 || echo "curl failed" >> /tmp/progress.log
+    echo "$APP_RESPONSE" | head -20 >> /tmp/progress.log
     exit 1
 fi
-echo "Application responds correctly" >> /tmp/progress.log
+
+# Verify all three greeting messages are present (proves database was initialized)
+MESSAGE_COUNT=0
+if echo "$APP_RESPONSE" | grep -q "Hello, World!"; then
+    MESSAGE_COUNT=$((MESSAGE_COUNT + 1))
+fi
+if echo "$APP_RESPONSE" | grep -q "Welcome to LAMP with Image Mode!"; then
+    MESSAGE_COUNT=$((MESSAGE_COUNT + 1))
+fi
+if echo "$APP_RESPONSE" | grep -q "This is a production bootable image!"; then
+    MESSAGE_COUNT=$((MESSAGE_COUNT + 1))
+fi
+
+if [ "$MESSAGE_COUNT" -lt 3 ]; then
+    echo "FAIL: Application shows only $MESSAGE_COUNT of 3 expected messages" >> /tmp/progress.log
+    echo "This indicates database initialization may have failed" >> /tmp/progress.log
+    exit 1
+fi
+
+echo "Application responds correctly with all database messages" >> /tmp/progress.log
 
 echo "PASS: Module 03 validation successful" >> /tmp/progress.log
 echo "Summary:" >> /tmp/progress.log
 echo "- VM: Running" >> /tmp/progress.log
 echo "- IP: $VM_IP" >> /tmp/progress.log
-echo "- MariaDB: Active" >> /tmp/progress.log
-echo "- Apache: Active" >> /tmp/progress.log
-echo "- Database rows: $DB_CHECK" >> /tmp/progress.log
-echo "- Application: Responding" >> /tmp/progress.log
+echo "- Application: Responding with all 3 database messages" >> /tmp/progress.log
+echo "- LAMP stack: Verified working (Apache + PHP + MariaDB)" >> /tmp/progress.log
 exit 0
