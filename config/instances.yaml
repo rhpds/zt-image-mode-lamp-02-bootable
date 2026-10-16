@@ -32,6 +32,12 @@ virtualmachines:
             protocol: TCP
             targetPort: 443
             name: registry
+      - name: webapp
+        ports:
+          - port: 8080
+            protocol: TCP
+            targetPort: 8080
+            name: http
     routes:
       - name: registry-http
         host: registry
@@ -44,3 +50,9 @@ virtualmachines:
         service: registry
         targetPort: 443
         tls: true
+      - name: webapp
+        host: webapp
+        service: webapp
+        targetPort: 8080
+        tls: true
+        tls_termination: Edge

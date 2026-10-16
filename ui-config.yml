@@ -17,6 +17,5 @@ antora:
 tabs:
   - name: ">_ terminal"
     url: /wetty
-  - name: "bootc Documentation"
-    url: https://containers.github.io/bootc/
-    external: true
+  - name: "LAMP Application"
+    url: https://webapp-${guid}.apps.ocpvdev01.rhdp.net

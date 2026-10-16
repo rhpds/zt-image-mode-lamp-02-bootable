@@ -116,6 +116,22 @@ sleep 20
 #     curl -s http://$VM_IP | head -10 >> /tmp/progress.log 2>&1 || echo "curl failed" >> /tmp/progress.log
 # fi
 
+# Set up port forwarding from buildhost:8080 to VM:80 for browser access
+echo "Setting up port forwarding for browser access..." >> /tmp/progress.log
+
+# Remove any existing port forward rules for port 8080
+iptables -t nat -D PREROUTING -p tcp --dport 8080 -j DNAT --to-destination ${VM_IP}:80 2>/dev/null || true
+iptables -D FORWARD -p tcp -d ${VM_IP} --dport 80 -j ACCEPT 2>/dev/null || true
+
+# Add new port forward rules
+iptables -t nat -A PREROUTING -p tcp --dport 8080 -j DNAT --to-destination ${VM_IP}:80
+iptables -A FORWARD -p tcp -d ${VM_IP} --dport 80 -j ACCEPT
+
+# Enable IP forwarding
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
+echo "Port forwarding configured: buildhost:8080 -> ${VM_IP}:80" >> /tmp/progress.log
+
 echo "Module 03 solve completed successfully" >> /tmp/progress.log
 echo "VM Name: $VM_NAME" >> /tmp/progress.log
 echo "VM IP: $VM_IP" >> /tmp/progress.log
