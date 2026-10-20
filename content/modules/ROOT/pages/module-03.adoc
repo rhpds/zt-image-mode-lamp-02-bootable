@@ -249,6 +249,13 @@ http://<VM_IP>
 
 You should see your LAMP application running - styled page with three greeting messages from the database.
 
+image::lamp-app-browser.png[LAMP Application in Browser,800,align="center"]
+
+[TIP]
+====
+**Browser Tab Access:** You can also view the application through the "LAMP Application" tab in the Showroom interface at the top of this page. This provides quick access without needing to remember the VM IP address.
+====
+
 This is the production deployment. The VM booted with:
 - Operating system configured
 - Services started automatically
