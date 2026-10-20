@@ -102,6 +102,13 @@ This creates a user `core` with password `redhat` and sudo access (wheel group).
 
 == Build the Disk Image
 
+Create the output directory for the disk image:
+
+[source,bash,role=execute]
+----
+mkdir -p ~/lamp-bootc/output
+----
+
 Convert the bootable container to a qcow2 disk image:
 
 [source,bash,role=execute]
