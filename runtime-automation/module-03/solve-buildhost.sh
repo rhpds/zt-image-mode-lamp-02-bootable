@@ -116,21 +116,32 @@ sleep 20
 #     curl -s http://$VM_IP | head -10 >> /tmp/progress.log 2>&1 || echo "curl failed" >> /tmp/progress.log
 # fi
 
-# Set up port forwarding from buildhost:8080 to VM:80 for browser access
-echo "Setting up port forwarding for browser access..." >> /tmp/progress.log
+# Set up TCP forwarding from buildhost:8080 to VM:80 for browser access via OpenShift route
+echo "Setting up TCP forwarding for browser access..." >> /tmp/progress.log
 
-# Remove any existing port forward rules for port 8080
-iptables -t nat -D PREROUTING -p tcp --dport 8080 -j DNAT --to-destination ${VM_IP}:80 2>/dev/null || true
-iptables -D FORWARD -p tcp -d ${VM_IP} --dport 80 -j ACCEPT 2>/dev/null || true
+# Install socat if not present
+if ! command -v socat &> /dev/null; then
+    echo "Installing socat..." >> /tmp/progress.log
+    dnf install -y socat >> /tmp/progress.log 2>&1
+fi
 
-# Add new port forward rules
-iptables -t nat -A PREROUTING -p tcp --dport 8080 -j DNAT --to-destination ${VM_IP}:80
-iptables -A FORWARD -p tcp -d ${VM_IP} --dport 80 -j ACCEPT
+# Kill any existing socat on port 8080
+pkill -f "socat.*8080" 2>/dev/null || true
+sleep 1
 
-# Enable IP forwarding
-echo 1 > /proc/sys/net/ipv4/ip_forward
+# Start socat to forward port 8080 to VM port 80
+# This allows the OpenShift webapp route to reach the nested VM
+nohup socat TCP-LISTEN:8080,fork,reuseaddr TCP:${VM_IP}:80 > /tmp/socat-webapp.log 2>&1 &
+SOCAT_PID=$!
 
-echo "Port forwarding configured: buildhost:8080 -> ${VM_IP}:80" >> /tmp/progress.log
+# Wait briefly and verify socat is running
+sleep 2
+if ps -p $SOCAT_PID > /dev/null 2>&1; then
+    echo "TCP forwarding started: buildhost:8080 -> ${VM_IP}:80 (PID: $SOCAT_PID)" >> /tmp/progress.log
+    ss -tlnp | grep :8080 >> /tmp/progress.log 2>&1 || true
+else
+    echo "WARNING: TCP forwarding may have failed to start" >> /tmp/progress.log
+fi
 
 echo "Module 03 solve completed successfully" >> /tmp/progress.log
 echo "VM Name: $VM_NAME" >> /tmp/progress.log
