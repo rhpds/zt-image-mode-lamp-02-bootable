@@ -146,7 +146,8 @@ fi
 echo "Module 03 solve completed successfully" >> /tmp/progress.log
 echo "VM Name: $VM_NAME" >> /tmp/progress.log
 echo "VM IP: $VM_IP" >> /tmp/progress.log
-echo "SSH: ssh -i $SSH_KEY core@$VM_IP" >> /tmp/progress.log
+echo "SSH: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null core@$VM_IP" >> /tmp/progress.log
+echo "Password: redhat" >> /tmp/progress.log
 
 # Write VM_IP to file for rhel user to source
 cat > /home/rhel/.lamp-vm-ip << EOF

@@ -124,14 +124,14 @@ Connect to the VM:
 
 [source,bash,role=execute]
 ----
-ssh core@$VM_IP
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null core@$VM_IP
 ----
 
 When prompted, enter the password: `redhat`
 
 [NOTE]
 ====
-If you get a host key warning on first connection, type `yes` to accept.
+The SSH options (`-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null`) bypass host key verification. This is appropriate for lab VMs that get rebuilt with new SSH keys but reuse the same IP address. In production environments, you would verify host keys for security.
 ====
 
 You're now inside the bootable VM. This is a complete RHEL system that booted from your image.
