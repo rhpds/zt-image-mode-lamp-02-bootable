@@ -223,6 +223,36 @@ exit
 
 You're back on your host.
 
+== Set Up Browser Access
+
+To access the application through the browser tab, set up port forwarding from your buildhost to the VM:
+
+[source,bash,role=execute]
+----
+sudo pkill -f "socat.*8080" 2>/dev/null || true
+sudo nohup socat TCP-LISTEN:8080,fork,reuseaddr TCP:${VM_IP}:80 > /tmp/socat-webapp.log 2>&1 &
+----
+
+This forwards traffic from buildhost port 8080 to the VM's port 80, allowing the "LAMP Application" browser tab to reach your application.
+
+Verify socat is running:
+
+[source,bash,role=execute]
+----
+sudo ss -tlnp | grep :8080
+----
+
+*Expected output:*
+
+----
+LISTEN 0      5            0.0.0.0:8080      0.0.0.0:*    users:(("socat",pid=XXXXX,fd=5))
+----
+
+[NOTE]
+====
+**Why this step is needed:** The browser tab uses an OpenShift route that connects to buildhost:8080. Since your VM is nested inside buildhost, socat forwards that traffic to the VM's actual IP address.
+====
+
 == Test the Application from Your Host
 
 Test from outside the VM using the IP address:
@@ -253,7 +283,7 @@ image::lamp-app-browser.png[LAMP Application in Browser,800,align="center"]
 
 [TIP]
 ====
-**Browser Tab Access:** You can also view the application through the "LAMP Application" tab in the Showroom interface at the top of this page. This provides quick access without needing to remember the VM IP address.
+**Browser Tab Access:** Now that you've set up port forwarding, you can also view the application through the "LAMP Application" tab in the Showroom interface at the top of this page. This provides quick access without needing to remember the VM IP address.
 ====
 
 This is the production deployment. The VM booted with:
