@@ -1,13 +1,4 @@
 ---
-name: modules
-title: Package and Deploy a Bootable LAMP Image
-version: master
-start_page: index.adoc
-nav:
-  - modules/ROOT/nav.adoc
 
-asciidoc:
-  attributes:
-    lab_name: "Package and Deploy a Bootable LAMP Image"
-    release-version: master
-    page-pagination: true
+name: modules
+version: master
