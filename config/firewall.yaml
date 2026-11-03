@@ -4,9 +4,3 @@ egress:
   - ports:
       - protocol: TCP
         port: 443
-
-# Ingress rules for application access (OpenShift route → buildhost:8080)
-ingress:
-  - ports:
-      - protocol: TCP
-        port: 8080

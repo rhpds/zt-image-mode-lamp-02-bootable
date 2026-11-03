@@ -67,33 +67,6 @@ fi
 
 echo "Application responds correctly with all database messages" >> /tmp/progress.log
 
-# Ensure port forwarding is up so the Showroom LAMP Application tab can reach the VM
-if ! ss -tlnp | grep -q ':8080'; then
-    echo "Port 8080 not listening - starting socat forwarder..." >> /tmp/progress.log
-    if ! command -v socat &> /dev/null; then
-        dnf install -y socat >> /tmp/progress.log 2>&1
-    fi
-    pkill -f "socat.*TCP-LISTEN:8080" 2>/dev/null || true
-    pkill -f "socat.*8080" 2>/dev/null || true
-    sleep 1
-    bash -c "nohup socat TCP-LISTEN:8080,fork,reuseaddr,bind=0.0.0.0 TCP:${VM_IP}:80 >/tmp/socat-webapp.log 2>&1 &"
-    sleep 2
-fi
-
-if ss -tlnp | grep -q ':8080'; then
-    echo "Port forwarding active on :8080" >> /tmp/progress.log
-    # Verify the forwarder reaches the app (same path the OpenShift route uses)
-    if curl -s --max-time 5 http://127.0.0.1:8080 | grep -q "Hello, World!"; then
-        echo "Application reachable via localhost:8080 forwarder" >> /tmp/progress.log
-    else
-        echo "WARNING: :8080 is listening but app did not respond as expected" >> /tmp/progress.log
-        cat /tmp/socat-webapp.log >> /tmp/progress.log 2>&1 || true
-    fi
-else
-    echo "WARNING: Could not establish port forwarding on :8080" >> /tmp/progress.log
-    cat /tmp/socat-webapp.log >> /tmp/progress.log 2>&1 || true
-fi
-
 echo "PASS: Module 03 validation successful" >> /tmp/progress.log
 echo "Summary:" >> /tmp/progress.log
 echo "- VM: Running" >> /tmp/progress.log
