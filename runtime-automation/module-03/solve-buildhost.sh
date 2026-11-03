@@ -126,21 +126,24 @@ if ! command -v socat &> /dev/null; then
 fi
 
 # Kill any existing socat on port 8080
+pkill -f "socat.*TCP-LISTEN:8080" 2>/dev/null || true
 pkill -f "socat.*8080" 2>/dev/null || true
 sleep 1
 
-# Start socat to forward port 8080 to VM port 80
-# This allows the OpenShift webapp route to reach the nested VM
-nohup socat TCP-LISTEN:8080,fork,reuseaddr TCP:${VM_IP}:80 > /tmp/socat-webapp.log 2>&1 &
-SOCAT_PID=$!
+# Start socat inside a nohup subshell so it survives the solve script exit
+# bind=0.0.0.0 ensures OpenShift can reach the listener on all interfaces
+bash -c "nohup socat TCP-LISTEN:8080,fork,reuseaddr,bind=0.0.0.0 TCP:${VM_IP}:80 >/tmp/socat-webapp.log 2>&1 &"
+disown -a 2>/dev/null || true
 
-# Wait briefly and verify socat is running
+# Wait and verify socat is listening (check the port, not just a PID)
 sleep 2
-if ps -p $SOCAT_PID > /dev/null 2>&1; then
-    echo "TCP forwarding started: buildhost:8080 -> ${VM_IP}:80 (PID: $SOCAT_PID)" >> /tmp/progress.log
+if ss -tlnp | grep -q ':8080'; then
+    echo "TCP forwarding started: buildhost:8080 -> ${VM_IP}:80" >> /tmp/progress.log
     ss -tlnp | grep :8080 >> /tmp/progress.log 2>&1 || true
 else
-    echo "WARNING: TCP forwarding may have failed to start" >> /tmp/progress.log
+    echo "WARNING: TCP forwarding failed to start on :8080" >> /tmp/progress.log
+    echo "socat log:" >> /tmp/progress.log
+    cat /tmp/socat-webapp.log >> /tmp/progress.log 2>&1 || true
 fi
 
 echo "Module 03 solve completed successfully" >> /tmp/progress.log

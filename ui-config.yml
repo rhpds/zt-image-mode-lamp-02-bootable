@@ -1,4 +1,12 @@
 ---
+type: showroom
+
+default_width: 30
+persist_url_state: true
+
+view_switcher:
+  enabled: true
+  default_mode: split
 
 antora:
   name: modules
@@ -18,4 +26,5 @@ tabs:
   - name: ">_ terminal"
     url: /wetty
   - name: "LAMP Application"
-    url: https://webapp-${guid}.apps.ocpvdev01.rhdp.net
+    url: https://webapp-${guid}.${DOMAIN}
+    external: true

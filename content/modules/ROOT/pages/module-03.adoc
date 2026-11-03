@@ -192,13 +192,13 @@ mariadb -u hellouser -p'SecurePassword' hellodb -e "SELECT * FROM greetings;"
 *Expected output:*
 
 ----
-+----+----------------------------------+---------------------+
-| id | message                          | created_at          |
-+----+----------------------------------+---------------------+
-|  1 | Hello, World!                    | 2025-01-15 10:30:00 |
-|  2 | Welcome to LAMP development!     | 2025-01-15 10:30:00 |
-|  3 | Volume mounts make iteration fast| 2025-01-15 10:30:00 |
-+----+----------------------------------+---------------------+
++----+-------------------------------------+---------------------+
+| id | message                             | created_at          |
++----+-------------------------------------+---------------------+
+|  1 | Hello, World!                       | 2025-01-15 10:30:00 |
+|  2 | Welcome to LAMP with Image Mode!    | 2025-01-15 10:30:00 |
+|  3 | This is a production bootable image!| 2025-01-15 10:30:00 |
++----+-------------------------------------+---------------------+
 ----
 
 The database initialized automatically on first boot. The data is from your `db-setup.sql` file that was baked into the image.
@@ -223,39 +223,19 @@ exit
 
 You're back on your host.
 
-== Set Up Browser Access
-
-To access the application through the browser tab, set up port forwarding from your buildhost to the VM:
-
-[source,bash,role=execute]
-----
-sudo pkill -f "socat.*8080" 2>/dev/null || true
-sudo nohup socat TCP-LISTEN:8080,fork,reuseaddr TCP:${VM_IP}:80 > /tmp/socat-webapp.log 2>&1 &
-----
-
-This forwards traffic from buildhost port 8080 to the VM's port 80, allowing the "LAMP Application" browser tab to reach your application.
-
-Verify socat is running:
-
-[source,bash,role=execute]
-----
-sudo ss -tlnp | grep :8080
-----
-
-*Expected output:*
-
-----
-LISTEN 0      5            0.0.0.0:8080      0.0.0.0:*    users:(("socat",pid=XXXXX,fd=5))
-----
-
-[NOTE]
-====
-**Why this step is needed:** The browser tab uses an OpenShift route that connects to buildhost:8080. Since your VM is nested inside buildhost, socat forwards that traffic to the VM's actual IP address.
-====
-
 == Test the Application from Your Host
 
-Test from outside the VM using the IP address:
+You are back on the buildhost. The VM lives on a private libvirt network (`192.168.122.x`), so you cannot open `http://<VM_IP>` in your laptop browser. Validate the app from the terminal instead.
+
+First, make sure `VM_IP` is still set in this shell (it can be lost if the terminal reconnects):
+
+[source,bash,role=execute]
+----
+VM_IP=$(sudo virsh domifaddr lamp-vm | grep ipv4 | awk '{print $4}' | cut -d'/' -f1)
+echo "VM IP: $VM_IP"
+----
+
+Test the application over the VM network:
 
 [source,bash,role=execute]
 ----
@@ -269,21 +249,68 @@ curl -s http://$VM_IP | grep -A 1 "Hello, World"
 <small>Created: 2025-01-15 10:30:00</small>
 ----
 
-The application is accessible over the network. Open your browser and navigate to:
+Confirm all three database messages are present:
+
+[source,bash,role=execute]
+----
+curl -s http://$VM_IP | grep -E "Hello, World|Welcome to LAMP|production bootable"
+----
+
+*Expected output:*
 
 ----
-http://<VM_IP>
+<strong>Hello, World!</strong><br>
+<strong>Welcome to LAMP with Image Mode!</strong><br>
+<strong>This is a production bootable image!</strong><br>
 ----
 
-(Replace `<VM_IP>` with the actual IP from earlier, e.g., `http://192.168.122.100`)
+The application is reachable from the buildhost. That proves Apache, PHP, and MariaDB are working end to end.
 
-You should see your LAMP application running - styled page with three greeting messages from the database.
+image::lamp-app-browser.png[LAMP Application page showing database greetings,800,align="center"]
 
-image::lamp-app-browser.png[LAMP Application in Browser,800,align="center"]
+== Set Up Optional Port Forwarding
+
+Optionally, forward buildhost port 8080 to the VM so the Showroom **LAMP Application** tab can reach the nested guest. This step is not required to complete the lab - terminal verification above is enough.
+
+Resolve the VM IP again, then start the forwarder:
+
+[source,bash,role=execute]
+----
+VM_IP=$(sudo virsh domifaddr lamp-vm | grep ipv4 | awk '{print $4}' | cut -d'/' -f1)
+sudo pkill -f "socat.*TCP-LISTEN:8080" 2>/dev/null || true
+sudo bash -c "nohup socat TCP-LISTEN:8080,fork,reuseaddr,bind=0.0.0.0 TCP:${VM_IP}:80 >/tmp/socat-webapp.log 2>&1 &"
+sleep 1
+sudo ss -tlnp | grep :8080
+----
+
+*Expected output:*
+
+----
+LISTEN 0      5            0.0.0.0:8080      0.0.0.0:*    users:(("socat",pid=XXXXX,fd=5))
+----
+
+[NOTE]
+====
+If there is no output, check the forwarder log with `cat /tmp/socat-webapp.log`. The most common cause is an empty `VM_IP` - re-run the `virsh domifaddr` command above first.
+====
+
+Verify the forwarder path (same path the OpenShift route uses):
+
+[source,bash,role=execute]
+----
+curl -s http://127.0.0.1:8080 | grep -A 1 "Hello, World"
+----
+
+*Expected output:*
+
+----
+<strong>Hello, World!</strong><br>
+<small>Created: 2025-01-15 10:30:00</small>
+----
 
 [TIP]
 ====
-**Browser Tab Access:** Now that you've set up port forwarding, you can also view the application through the "LAMP Application" tab in the Showroom interface at the top of this page. This provides quick access without needing to remember the VM IP address.
+After the forwarder is listening, you can open the **LAMP Application** tab. It launches an external browser tab to the lab's webapp route (`webapp-<guid>`), which connects to buildhost:8080 and is forwarded to the VM. If the tab is blank or unavailable, rely on the `curl` checks above - they are the source of truth for this lab.
 ====
 
 This is the production deployment. The VM booted with:
