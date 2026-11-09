@@ -125,25 +125,29 @@ if ! command -v socat &> /dev/null; then
     dnf install -y socat >> /tmp/progress.log 2>&1
 fi
 
-# Kill any existing socat on port 8080
+# Stop any previous forwarder (background socat or prior systemd unit)
 pkill -f "socat.*TCP-LISTEN:8080" 2>/dev/null || true
 pkill -f "socat.*8080" 2>/dev/null || true
+systemctl reset-failed lamp-webapp-forward.service 2>/dev/null || true
+systemctl stop lamp-webapp-forward.service 2>/dev/null || true
 sleep 1
 
-# Start socat inside a nohup subshell so it survives the solve script exit
-# bind=0.0.0.0 ensures OpenShift can reach the listener on all interfaces
-bash -c "nohup socat TCP-LISTEN:8080,fork,reuseaddr,bind=0.0.0.0 TCP:${VM_IP}:80 >/tmp/socat-webapp.log 2>&1 &"
-disown -a 2>/dev/null || true
+# Run socat under systemd so it survives the solve script / sudo session exit
+# (sudo bash -c 'nohup socat ... &' is killed when the parent shell exits)
+systemd-run --unit=lamp-webapp-forward \
+  /usr/bin/socat TCP-LISTEN:8080,fork,reuseaddr,bind=0.0.0.0 TCP:${VM_IP}:80 \
+  >> /tmp/progress.log 2>&1 || true
 
-# Wait and verify socat is listening (check the port, not just a PID)
+# Wait and verify socat is listening
 sleep 2
 if ss -tlnp | grep -q ':8080'; then
     echo "TCP forwarding started: buildhost:8080 -> ${VM_IP}:80" >> /tmp/progress.log
     ss -tlnp | grep :8080 >> /tmp/progress.log 2>&1 || true
+    systemctl is-active lamp-webapp-forward.service >> /tmp/progress.log 2>&1 || true
 else
     echo "WARNING: TCP forwarding failed to start on :8080" >> /tmp/progress.log
-    echo "socat log:" >> /tmp/progress.log
-    cat /tmp/socat-webapp.log >> /tmp/progress.log 2>&1 || true
+    systemctl status lamp-webapp-forward.service --no-pager >> /tmp/progress.log 2>&1 || true
+    journalctl -u lamp-webapp-forward.service -n 20 --no-pager >> /tmp/progress.log 2>&1 || true
 fi
 
 echo "Module 03 solve completed successfully" >> /tmp/progress.log

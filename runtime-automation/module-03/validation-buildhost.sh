@@ -69,14 +69,18 @@ echo "Application responds correctly with all database messages" >> /tmp/progres
 
 # Ensure port forwarding is up so the Showroom LAMP Application tab can reach the VM
 if ! ss -tlnp | grep -q ':8080'; then
-    echo "Port 8080 not listening - starting socat forwarder..." >> /tmp/progress.log
+    echo "Port 8080 not listening - starting socat forwarder via systemd..." >> /tmp/progress.log
     if ! command -v socat &> /dev/null; then
         dnf install -y socat >> /tmp/progress.log 2>&1
     fi
     pkill -f "socat.*TCP-LISTEN:8080" 2>/dev/null || true
     pkill -f "socat.*8080" 2>/dev/null || true
+    systemctl reset-failed lamp-webapp-forward.service 2>/dev/null || true
+    systemctl stop lamp-webapp-forward.service 2>/dev/null || true
     sleep 1
-    bash -c "nohup socat TCP-LISTEN:8080,fork,reuseaddr,bind=0.0.0.0 TCP:${VM_IP}:80 >/tmp/socat-webapp.log 2>&1 &"
+    systemd-run --unit=lamp-webapp-forward \
+      /usr/bin/socat TCP-LISTEN:8080,fork,reuseaddr,bind=0.0.0.0 TCP:${VM_IP}:80 \
+      >> /tmp/progress.log 2>&1 || true
     sleep 2
 fi
 
@@ -87,11 +91,12 @@ if ss -tlnp | grep -q ':8080'; then
         echo "Application reachable via localhost:8080 forwarder" >> /tmp/progress.log
     else
         echo "WARNING: :8080 is listening but app did not respond as expected" >> /tmp/progress.log
-        cat /tmp/socat-webapp.log >> /tmp/progress.log 2>&1 || true
+        systemctl status lamp-webapp-forward.service --no-pager >> /tmp/progress.log 2>&1 || true
     fi
 else
     echo "WARNING: Could not establish port forwarding on :8080" >> /tmp/progress.log
-    cat /tmp/socat-webapp.log >> /tmp/progress.log 2>&1 || true
+    systemctl status lamp-webapp-forward.service --no-pager >> /tmp/progress.log 2>&1 || true
+    journalctl -u lamp-webapp-forward.service -n 20 --no-pager >> /tmp/progress.log 2>&1 || true
 fi
 
 echo "PASS: Module 03 validation successful" >> /tmp/progress.log
