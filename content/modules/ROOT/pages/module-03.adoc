@@ -110,12 +110,7 @@ echo "VM IP: $VM_IP"
 
 [NOTE]
 ====
-If you used the solve button, you can also get the IP with:
-[source,bash]
-----
-source ~/.lamp-vm-ip
-echo "VM IP: $VM_IP"
-----
+`~/.lamp-vm-ip` only exists if you used the Module 3 **solve** button. If that file is missing, use the `virsh domifaddr` command above - that is the supported path for manual steps.
 ====
 
 == SSH into the VM
@@ -274,61 +269,58 @@ Optionally, forward buildhost port 8080 to the VM so the Showroom **LAMP Applica
 
 [IMPORTANT]
 ====
-Do not background `socat` under `sudo bash -c '... &'`. When that shell exits, `sudo` tears down the forwarder, so port 8080 never stays listening and no log file is created. Use a systemd-managed service instead.
+Create a real systemd unit for the forwarder. Do **not** use `pkill -f "socat.*8080"` in the same command block as the socat start line - that pattern matches the script itself and can kill the remaining commands before the service is created.
 ====
 
-Resolve the VM IP, install `socat` if needed, and start a persistent forwarder:
+Resolve the VM IP, install `socat` if needed, and install a persistent forwarder service:
 
 [source,bash,role=execute]
 ----
 VM_IP=$(sudo virsh domifaddr lamp-vm | grep ipv4 | awk '{print $4}' | cut -d'/' -f1)
 echo "VM IP: $VM_IP"
+test -n "$VM_IP"
 sudo dnf install -y socat
-sudo pkill -f "socat.*8080" 2>/dev/null || true
-sudo systemctl reset-failed lamp-webapp-forward.service 2>/dev/null || true
 sudo systemctl stop lamp-webapp-forward.service 2>/dev/null || true
-sudo systemd-run --unit=lamp-webapp-forward \
-  /usr/bin/socat TCP-LISTEN:8080,fork,reuseaddr,bind=0.0.0.0 TCP:${VM_IP}:80
+sudo pkill -x socat 2>/dev/null || true
+printf '%s\n' \
+  '[Unit]' \
+  'Description=Forward buildhost:8080 to LAMP VM' \
+  'After=network.target' \
+  '' \
+  '[Service]' \
+  "ExecStart=/usr/bin/socat TCP-LISTEN:8080,fork,reuseaddr,bind=0.0.0.0 TCP:${VM_IP}:80" \
+  'Restart=on-failure' \
+  '' \
+  '[Install]' \
+  'WantedBy=multi-user.target' \
+| sudo tee /etc/systemd/system/lamp-webapp-forward.service > /dev/null
+sudo systemctl daemon-reload
+sudo systemctl restart lamp-webapp-forward.service
 sleep 1
-sudo ss -tlnp | grep :8080
 sudo systemctl is-active lamp-webapp-forward.service
+sudo ss -tlnp | grep :8080
+curl -s http://127.0.0.1:8080 | grep -A 1 "Hello, World"
 ----
 
-*Expected output (port listener line may vary slightly):*
+*Expected output (listener PID and timestamp will vary):*
 
 ----
-LISTEN 0      5            0.0.0.0:8080      0.0.0.0:*    users:(("socat",pid=XXXXX,fd=5))
 active
+LISTEN 0      5            0.0.0.0:8080      0.0.0.0:*    users:(("socat",pid=XXXXX,fd=5))
+<strong>Hello, World!</strong><br>
+<small>Created: 2026-11-09 16:20:46</small>
 ----
 
 [NOTE]
 ====
-If `:8080` is not listening, inspect the service:
+If the service is not `active` or `:8080` is not listening:
 
 [source,bash]
 ----
 sudo systemctl status lamp-webapp-forward.service --no-pager
 sudo journalctl -u lamp-webapp-forward.service -n 20 --no-pager
 ----
-
-The most common cause is an empty `VM_IP` - confirm it printed above before starting the service.
 ====
-
-Verify the forwarder path (same path the OpenShift route uses):
-
-[source,bash,role=execute]
-----
-curl -s http://127.0.0.1:8080 | grep -A 1 "Hello, World"
-----
-
-*Expected output:*
-
-----
-<strong>Hello, World!</strong><br>
-<small>Created: 2026-11-09 15:31:41</small>
-----
-
-(The timestamp will match your VM boot time.)
 
 [TIP]
 ====

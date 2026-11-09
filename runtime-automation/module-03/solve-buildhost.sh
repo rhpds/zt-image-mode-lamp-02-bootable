@@ -125,18 +125,28 @@ if ! command -v socat &> /dev/null; then
     dnf install -y socat >> /tmp/progress.log 2>&1
 fi
 
-# Stop any previous forwarder (background socat or prior systemd unit)
-pkill -f "socat.*TCP-LISTEN:8080" 2>/dev/null || true
-pkill -f "socat.*8080" 2>/dev/null || true
-systemctl reset-failed lamp-webapp-forward.service 2>/dev/null || true
+# Install a real systemd unit for the forwarder.
+# Do NOT use `pkill -f "socat.*8080"` here - that pattern matches this script and can
+# kill the solve job before the service is created.
 systemctl stop lamp-webapp-forward.service 2>/dev/null || true
+pkill -x socat 2>/dev/null || true
 sleep 1
 
-# Run socat under systemd so it survives the solve script / sudo session exit
-# (sudo bash -c 'nohup socat ... &' is killed when the parent shell exits)
-systemd-run --unit=lamp-webapp-forward \
-  /usr/bin/socat TCP-LISTEN:8080,fork,reuseaddr,bind=0.0.0.0 TCP:${VM_IP}:80 \
-  >> /tmp/progress.log 2>&1 || true
+cat > /etc/systemd/system/lamp-webapp-forward.service <<EOF
+[Unit]
+Description=Forward buildhost:8080 to LAMP VM
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/socat TCP-LISTEN:8080,fork,reuseaddr,bind=0.0.0.0 TCP:${VM_IP}:80
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl restart lamp-webapp-forward.service >> /tmp/progress.log 2>&1 || true
 
 # Wait and verify socat is listening
 sleep 2
