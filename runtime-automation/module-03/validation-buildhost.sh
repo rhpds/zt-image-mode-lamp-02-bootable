@@ -69,42 +69,24 @@ echo "Application responds correctly with all database messages" >> /tmp/progres
 
 # Ensure port forwarding is up so the Showroom LAMP Application tab can reach the VM
 if ! ss -tlnp | grep -q ':8080'; then
-    echo "Port 8080 not listening - installing lamp-webapp-forward.service..." >> /tmp/progress.log
-    if ! command -v socat &> /dev/null; then
-        dnf install -y socat >> /tmp/progress.log 2>&1
+    echo "Port 8080 not listening - running enable-lamp-webapp-forward..." >> /tmp/progress.log
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    FORWARDER="${SCRIPT_DIR}/enable-lamp-webapp-forward.sh"
+    if [ ! -x /usr/local/bin/enable-lamp-webapp-forward ] && [ -f "$FORWARDER" ]; then
+        cp "$FORWARDER" /usr/local/bin/enable-lamp-webapp-forward
+        chmod 755 /usr/local/bin/enable-lamp-webapp-forward
     fi
-    # Do NOT use pkill -f "socat.*8080" - it can kill this validation script
-    systemctl stop lamp-webapp-forward.service 2>/dev/null || true
-    pkill -x socat 2>/dev/null || true
-    sleep 1
-    cat > /etc/systemd/system/lamp-webapp-forward.service <<EOF
-[Unit]
-Description=Forward buildhost:8080 to LAMP VM
-After=network.target
-
-[Service]
-ExecStart=/usr/bin/socat TCP-LISTEN:8080,fork,reuseaddr,bind=0.0.0.0 TCP:${VM_IP}:80
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOF
-    systemctl daemon-reload
-    systemctl restart lamp-webapp-forward.service >> /tmp/progress.log 2>&1 || true
-    sleep 2
+    if [ -x /usr/local/bin/enable-lamp-webapp-forward ]; then
+        /usr/local/bin/enable-lamp-webapp-forward >> /tmp/progress.log 2>&1 || true
+    elif [ -f "$FORWARDER" ]; then
+        bash "$FORWARDER" >> /tmp/progress.log 2>&1 || true
+    fi
 fi
 
-if ss -tlnp | grep -q ':8080'; then
-    echo "Port forwarding active on :8080" >> /tmp/progress.log
-    # Verify the forwarder reaches the app (same path the OpenShift route uses)
-    if curl -s --max-time 5 http://127.0.0.1:8080 | grep -q "Hello, World!"; then
-        echo "Application reachable via localhost:8080 forwarder" >> /tmp/progress.log
-    else
-        echo "WARNING: :8080 is listening but app did not respond as expected" >> /tmp/progress.log
-        systemctl status lamp-webapp-forward.service --no-pager >> /tmp/progress.log 2>&1 || true
-    fi
+if ss -tlnp | grep -q ':8080' && curl -s --max-time 5 http://127.0.0.1:8080 | grep -q "Hello, World!"; then
+    echo "Application reachable via localhost:8080 forwarder" >> /tmp/progress.log
 else
-    echo "WARNING: Could not establish port forwarding on :8080" >> /tmp/progress.log
+    echo "WARNING: Could not verify port forwarding on :8080" >> /tmp/progress.log
     systemctl status lamp-webapp-forward.service --no-pager >> /tmp/progress.log 2>&1 || true
     journalctl -u lamp-webapp-forward.service -n 20 --no-pager >> /tmp/progress.log 2>&1 || true
 fi

@@ -119,45 +119,23 @@ sleep 20
 # Set up TCP forwarding from buildhost:8080 to VM:80 for browser access via OpenShift route
 echo "Setting up TCP forwarding for browser access..." >> /tmp/progress.log
 
-# Install socat if not present
-if ! command -v socat &> /dev/null; then
-    echo "Installing socat..." >> /tmp/progress.log
-    dnf install -y socat >> /tmp/progress.log 2>&1
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FORWARDER="${SCRIPT_DIR}/enable-lamp-webapp-forward.sh"
+if [ ! -x /usr/local/bin/enable-lamp-webapp-forward ] && [ -f "$FORWARDER" ]; then
+    cp "$FORWARDER" /usr/local/bin/enable-lamp-webapp-forward
+    chmod 755 /usr/local/bin/enable-lamp-webapp-forward
 fi
 
-# Install a real systemd unit for the forwarder.
-# Do NOT use `pkill -f "socat.*8080"` here - that pattern matches this script and can
-# kill the solve job before the service is created.
-systemctl stop lamp-webapp-forward.service 2>/dev/null || true
-pkill -x socat 2>/dev/null || true
-sleep 1
-
-cat > /etc/systemd/system/lamp-webapp-forward.service <<EOF
-[Unit]
-Description=Forward buildhost:8080 to LAMP VM
-After=network.target
-
-[Service]
-ExecStart=/usr/bin/socat TCP-LISTEN:8080,fork,reuseaddr,bind=0.0.0.0 TCP:${VM_IP}:80
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl daemon-reload
-systemctl restart lamp-webapp-forward.service >> /tmp/progress.log 2>&1 || true
-
-# Wait and verify socat is listening
-sleep 2
-if ss -tlnp | grep -q ':8080'; then
-    echo "TCP forwarding started: buildhost:8080 -> ${VM_IP}:80" >> /tmp/progress.log
-    ss -tlnp | grep :8080 >> /tmp/progress.log 2>&1 || true
-    systemctl is-active lamp-webapp-forward.service >> /tmp/progress.log 2>&1 || true
+if [ -x /usr/local/bin/enable-lamp-webapp-forward ]; then
+    /usr/local/bin/enable-lamp-webapp-forward >> /tmp/progress.log 2>&1 || {
+        echo "WARNING: enable-lamp-webapp-forward reported an error" >> /tmp/progress.log
+    }
+elif [ -f "$FORWARDER" ]; then
+    bash "$FORWARDER" >> /tmp/progress.log 2>&1 || {
+        echo "WARNING: enable-lamp-webapp-forward.sh reported an error" >> /tmp/progress.log
+    }
 else
-    echo "WARNING: TCP forwarding failed to start on :8080" >> /tmp/progress.log
-    systemctl status lamp-webapp-forward.service --no-pager >> /tmp/progress.log 2>&1 || true
-    journalctl -u lamp-webapp-forward.service -n 20 --no-pager >> /tmp/progress.log 2>&1 || true
+    echo "WARNING: forwarder helper not found; skipping browser forwarder setup" >> /tmp/progress.log
 fi
 
 echo "Module 03 solve completed successfully" >> /tmp/progress.log

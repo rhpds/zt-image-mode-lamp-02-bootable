@@ -265,57 +265,62 @@ image::lamp-app-browser.png[LAMP Application page showing database greetings,800
 
 == Set Up Optional Port Forwarding
 
-Optionally, forward buildhost port 8080 to the VM so the Showroom **LAMP Application** tab can reach the nested guest. This step is not required to complete the lab - terminal verification above is enough.
+Optionally, forward buildhost port 8080 to the VM so the Showroom **LAMP Application** tab can reach the nested guest. This step is not required to complete the lab - the `curl http://$VM_IP` checks above already prove the app works.
 
-`socat` is already installed on the buildhost. Do **not** put `dnf install` in this block - a long-running install in the web terminal often consumes the rest of a pasted/executed command block as stdin, so the forwarder never starts.
-
-Create the forwarder service:
+Use the helper installed on the buildhost. It is intentionally a **single command** so the web terminal cannot drop part of a multi-line paste:
 
 [source,bash,role=execute]
 ----
-VM_IP=$(sudo virsh domifaddr lamp-vm | grep ipv4 | awk '{print $4}' | cut -d'/' -f1)
-echo "VM IP: $VM_IP"
-test -n "$VM_IP"
-sudo systemctl stop lamp-webapp-forward.service 2>/dev/null || true
-sudo pkill -x socat 2>/dev/null || true
-printf '%s\n' \
-  '[Unit]' \
-  'Description=Forward buildhost:8080 to LAMP VM' \
-  'After=network.target' \
-  '' \
-  '[Service]' \
-  "ExecStart=/usr/bin/socat TCP-LISTEN:8080,fork,reuseaddr,bind=0.0.0.0 TCP:${VM_IP}:80" \
-  'Restart=on-failure' \
-  '' \
-  '[Install]' \
-  'WantedBy=multi-user.target' \
-| sudo tee /etc/systemd/system/lamp-webapp-forward.service > /dev/null
-sudo systemctl daemon-reload
-sudo systemctl restart lamp-webapp-forward.service
-echo "Forwarder service installed"
+sudo enable-lamp-webapp-forward
 ----
 
-Verify the forwarder (run this as its own step so you always see the result):
-
-[source,bash,role=execute]
-----
-sudo systemctl is-active lamp-webapp-forward.service
-sudo ss -tlnp | grep :8080
-curl -s http://127.0.0.1:8080 | grep -A 1 "Hello, World"
-----
-
-*Expected output (listener PID and timestamp will vary):*
+*Expected output (IP/PID will vary):*
 
 ----
-active
+VM IP: 192.168.122.172
+Service state: active
 LISTEN 0      5            0.0.0.0:8080      0.0.0.0:*    users:(("socat",pid=XXXXX,fd=5))
-<strong>Hello, World!</strong><br>
-<small>Created: 2026-11-09 17:01:00</small>
+OK: LAMP app reachable via http://127.0.0.1:8080
+Refresh the Showroom LAMP Application tab now.
+----
+
+If the helper is missing on an older provision, install it once, then run it:
+
+[source,bash,role=execute]
+----
+sudo tee /usr/local/bin/enable-lamp-webapp-forward > /dev/null <<'EOF'
+#!/bin/bash
+set -euo pipefail
+VM_IP="$(virsh domifaddr lamp-vm | awk '/ipv4/ {print $4}' | cut -d/ -f1 | head -n1)"
+echo "VM IP: ${VM_IP}"
+test -n "${VM_IP}"
+systemctl stop lamp-webapp-forward.service 2>/dev/null || true
+pkill -x socat 2>/dev/null || true
+cat > /etc/systemd/system/lamp-webapp-forward.service <<UNIT
+[Unit]
+Description=Forward buildhost:8080 to LAMP VM
+After=network.target
+[Service]
+ExecStart=/usr/bin/socat TCP-LISTEN:8080,fork,reuseaddr,bind=0.0.0.0 TCP:${VM_IP}:80
+Restart=on-failure
+[Install]
+WantedBy=multi-user.target
+UNIT
+systemctl daemon-reload
+systemctl enable --now lamp-webapp-forward.service
+sleep 1
+systemctl is-active lamp-webapp-forward.service
+ss -tlnp | grep :8080
+curl -fsS http://127.0.0.1:8080 | grep -q "Hello, World!"
+echo "OK: LAMP app reachable via http://127.0.0.1:8080"
+EOF
+sudo chmod 755 /usr/local/bin/enable-lamp-webapp-forward
+sudo enable-lamp-webapp-forward
 ----
 
 [NOTE]
 ====
-If the service is not `active` or `:8080` is not listening:
+If the helper fails:
 
 [source,bash]
 ----
@@ -326,7 +331,7 @@ sudo journalctl -u lamp-webapp-forward.service -n 20 --no-pager
 
 [TIP]
 ====
-After the forwarder is listening, refresh the **LAMP Application** tab. If the tab is still blank, rely on the `curl` checks above - they are the source of truth for this lab.
+After you see `OK: LAMP app reachable via http://127.0.0.1:8080`, refresh the **LAMP Application** tab. If the tab is still blank, the terminal `curl` result is still the source of truth for lab completion.
 ====
 
 This is the production deployment. The VM booted with:
