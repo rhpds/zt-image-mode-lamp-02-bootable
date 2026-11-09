@@ -121,13 +121,13 @@ echo "Setting up TCP forwarding for browser access..." >> /tmp/progress.log
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FORWARDER="${SCRIPT_DIR}/enable-lamp-webapp-forward.sh"
-if [ ! -x /usr/local/bin/enable-lamp-webapp-forward ] && [ -f "$FORWARDER" ]; then
-    cp "$FORWARDER" /usr/local/bin/enable-lamp-webapp-forward
-    chmod 755 /usr/local/bin/enable-lamp-webapp-forward
+if [ ! -x /usr/bin/enable-lamp-webapp-forward ] && [ -f "$FORWARDER" ]; then
+    cp "$FORWARDER" /usr/bin/enable-lamp-webapp-forward
+    chmod 755 /usr/bin/enable-lamp-webapp-forward
 fi
 
-if [ -x /usr/local/bin/enable-lamp-webapp-forward ]; then
-    /usr/local/bin/enable-lamp-webapp-forward >> /tmp/progress.log 2>&1 || {
+if [ -x /usr/bin/enable-lamp-webapp-forward ]; then
+    /usr/bin/enable-lamp-webapp-forward >> /tmp/progress.log 2>&1 || {
         echo "WARNING: enable-lamp-webapp-forward reported an error" >> /tmp/progress.log
     }
 elif [ -f "$FORWARDER" ]; then

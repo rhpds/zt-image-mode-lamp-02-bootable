@@ -288,7 +288,7 @@ If the helper is missing on an older provision, install it once, then run it:
 
 [source,bash,role=execute]
 ----
-sudo tee /usr/local/bin/enable-lamp-webapp-forward > /dev/null <<'EOF'
+sudo tee /usr/bin/enable-lamp-webapp-forward > /dev/null <<'EOF'
 #!/bin/bash
 set -euo pipefail
 VM_IP="$(virsh domifaddr lamp-vm | awk '/ipv4/ {print $4}' | cut -d/ -f1 | head -n1)"
@@ -314,7 +314,7 @@ ss -tlnp | grep :8080
 curl -fsS http://127.0.0.1:8080 | grep -q "Hello, World!"
 echo "OK: LAMP app reachable via http://127.0.0.1:8080"
 EOF
-sudo chmod 755 /usr/local/bin/enable-lamp-webapp-forward
+sudo chmod 755 /usr/bin/enable-lamp-webapp-forward
 sudo enable-lamp-webapp-forward
 ----
 

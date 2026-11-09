@@ -325,7 +325,7 @@ chown rhel:rhel /home/rhel/lamp-bootc/README.md
 # Helper used by Module 3 to expose the nested VM on buildhost:8080 for the LAMP Application tab.
 # Keep this as a single command for learners so Wetty multi-line paste cannot break the forwarder setup.
 echo "Installing enable-lamp-webapp-forward helper..." >> /tmp/progress.log
-cat > /usr/local/bin/enable-lamp-webapp-forward << 'HELPER'
+cat > /usr/bin/enable-lamp-webapp-forward << 'HELPER'
 #!/bin/bash
 # Enable buildhost:8080 -> lamp-vm:80 forwarding for the Showroom LAMP Application tab.
 set -euo pipefail
@@ -402,7 +402,7 @@ echo "OK: LAMP app reachable via http://127.0.0.1:8080"
 echo "Refresh the Showroom LAMP Application tab now."
 exit 0
 HELPER
-chmod 755 /usr/local/bin/enable-lamp-webapp-forward
+chmod 755 /usr/bin/enable-lamp-webapp-forward
 
 echo "Setup complete!" >> /tmp/progress.log
 echo "LAMP production environment ready at /home/rhel/lamp-bootc" >> /tmp/progress.log

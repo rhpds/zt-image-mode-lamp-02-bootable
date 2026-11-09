@@ -72,12 +72,12 @@ if ! ss -tlnp | grep -q ':8080'; then
     echo "Port 8080 not listening - running enable-lamp-webapp-forward..." >> /tmp/progress.log
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     FORWARDER="${SCRIPT_DIR}/enable-lamp-webapp-forward.sh"
-    if [ ! -x /usr/local/bin/enable-lamp-webapp-forward ] && [ -f "$FORWARDER" ]; then
-        cp "$FORWARDER" /usr/local/bin/enable-lamp-webapp-forward
-        chmod 755 /usr/local/bin/enable-lamp-webapp-forward
+    if [ ! -x /usr/bin/enable-lamp-webapp-forward ] && [ -f "$FORWARDER" ]; then
+        cp "$FORWARDER" /usr/bin/enable-lamp-webapp-forward
+        chmod 755 /usr/bin/enable-lamp-webapp-forward
     fi
-    if [ -x /usr/local/bin/enable-lamp-webapp-forward ]; then
-        /usr/local/bin/enable-lamp-webapp-forward >> /tmp/progress.log 2>&1 || true
+    if [ -x /usr/bin/enable-lamp-webapp-forward ]; then
+        /usr/bin/enable-lamp-webapp-forward >> /tmp/progress.log 2>&1 || true
     elif [ -f "$FORWARDER" ]; then
         bash "$FORWARDER" >> /tmp/progress.log 2>&1 || true
     fi
