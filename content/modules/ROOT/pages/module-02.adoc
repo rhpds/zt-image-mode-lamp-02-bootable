@@ -1,12 +1,13 @@
-= Build the Bootable Image
+= Build the bootable image
 
-Write the production Containerfile, build a bootable container image, and convert it to a disk image you can deploy as a VM.
+[.lead]
+**Goal:** Write the production Containerfile, build a bootable container image, then convert it to a VM disk (`disk.qcow2`).
 
-This module includes wait times (8-10 minutes for disk image creation). You'll understand what's happening during those waits.
+*Time: ~17 minutes (includes an 8–10 minute disk build wait)*
 
-*Time: ~17 minutes (includes waits)*
+image::bootc-build-pipeline.svg[Four-step pipeline from Containerfile to bootc image to qcow2 disk to VM,width=1000,align=center]
 
-== Write the Production Containerfile
+== Write the production Containerfile
 
 Create the production Containerfile:
 
@@ -41,15 +42,15 @@ RUN firewall-offline-cmd --add-service=http
 EOF
 ----
 
-*Key points about this production Containerfile:*
-1. Uses `rhel-bootc` base (bootable OS, not just container runtime)
-2. **COPY** files in (not volume mounts)
-3. Enables services for automatic startup
-4. Configures SELinux and firewall at build time
+**Focus on three Image Mode ideas in this file:**
 
-== Build the Bootable Container Image
+1. **`rhel-bootc` base** — bootable OS image, not only an app runtime
+2. **`COPY`** — application is immutable content inside the image
+3. **`systemctl enable`** — first boot starts MariaDB, Apache, and DB init
 
-Build the bootable container as root (bootc-image-builder will need to access it):
+== Build the bootable container image
+
+Build as root so later tooling can use the image:
 
 [source,bash,role=execute]
 ----
@@ -57,36 +58,33 @@ cd ~/lamp-bootc
 sudo podman build -f Containerfile.bootc -t lamp-bootc .
 ----
 
-You'll see package installation and file copying. This takes ~2 minutes.
+This takes about 2 minutes.
 
-*Expected output (last few lines):*
+*You should see a successful tag near the end:*
 
 ----
-COMMIT lamp-bootc
---> 8a9b1c2d3e4f
 Successfully tagged localhost/lamp-bootc:latest
-8a9b1c2d3e4f...
 ----
 
-Verify the image:
+Verify:
 
 [source,bash,role=execute]
 ----
 sudo podman images lamp-bootc
 ----
 
-*Expected output:*
+*Expected shape:*
 
 ----
 REPOSITORY            TAG         IMAGE ID      CREATED             SIZE
-localhost/lamp-bootc  latest      12e2d70ec86d  About a minute ago  ~2 GB
+localhost/lamp-bootc  latest      ...           ...                 ~2 GB
 ----
 
-The bootable image is approximately 2 GB because it includes the complete RHEL bootc base, LAMP stack, firewalld, and your application files.
+The size is large because this is OS + LAMP + app, not a tiny app-only container.
 
-== Create a Configuration File for bootc-image-builder
+== Configure the image-builder user
 
-bootc-image-builder needs a configuration file to define the VM user:
+bootc-image-builder needs a VM login user:
 
 [source,bash,role=execute]
 ----
@@ -98,18 +96,18 @@ groups = ["wheel"]
 EOF
 ----
 
-This creates a user `core` with password `redhat` and sudo access (wheel group).
+You will SSH as `core` / `redhat` in Module 3.
 
-== Build the Disk Image
+== Build the disk image
 
-Create the output directory for the disk image:
+Prepare output storage:
 
 [source,bash,role=execute]
 ----
 mkdir -p ~/lamp-bootc/output
 ----
 
-Convert the bootable container to a qcow2 disk image:
+Convert the bootable container to qcow2:
 
 [source,bash,role=execute]
 ----
@@ -127,41 +125,26 @@ sudo podman run --rm --privileged \
 
 [NOTE]
 ====
-**This takes 8-10 minutes.** Here's what's happening:
+**Expect 8–10 minutes.** Typical stages:
 
-1. **Pull base layers** (~2 min): Downloads RHEL bootc base if not cached
-2. **Create partition table** (~1 min): Sets up disk layout (boot, root, swap)
-3. **Extract container layers** (~3 min): Unpacks your bootable image to the disk
-4. **Install bootloader** (~1 min): Makes the disk bootable (GRUB)
-5. **Compress to qcow2** (~2 min): Creates the final virtual disk image
+1. Pull/cache layers
+2. Partition the disk
+3. Extract container contents
+4. Install bootloader
+5. Write compressed `qcow2`
 
-This wait is normal. In production CI/CD, this runs once per deployment, not per developer.
+In real pipelines this runs in CI once per release, not on every developer save.
 ====
 
-While you wait, understand what's different from Lab 1:
-- Lab 1: Container with volume mounts (application runtime)
-- Lab 2: Bootable disk image (complete OS + application)
+While it runs, remember the Lab 1 contrast: Lab 1 deployed a mutable app container; Lab 2 is producing a **bootable disk** that carries OS + app together.
 
-The disk image includes:
-- RHEL 10 operating system
-- Your LAMP stack (MariaDB, Apache, PHP)
-- Your application code (baked in)
-- Systemd services configured to start on boot
-- Firewall rules, SELinux policies
-
-When this VM boots, it's a complete, ready-to-serve LAMP application. No setup needed.
-
-Once complete, verify the disk image was created:
+== Confirm the disk artifact
 
 [source,bash,role=execute]
 ----
 ls -lh ~/lamp-bootc/output/qcow2/disk.qcow2
 ----
 
-*Expected output:*
+*You should see a large `disk.qcow2` file (about 1 GB+).*
 
-----
--rw-r--r-- 1 root root 1.2G Jan 15 10:45 /home/rhel/lamp-bootc/output/qcow2/disk.qcow2
-----
-
-You now have a bootable disk image. Next module: deploy it as a VM and test the application.
+**Checkpoint:** you now have the production artifact. Next module boots it as `lamp-vm` and validates the app.

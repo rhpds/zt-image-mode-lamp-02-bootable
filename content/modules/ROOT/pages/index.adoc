@@ -1,69 +1,66 @@
-= Package and Deploy a Bootable LAMP Application
+= Lab 2 of 2: Package and Deploy a Bootable LAMP Image
 
-Your LAMP application works great in development with volume mounts. Now transform it for production - files baked into the image, packaged as a bootable VM.
+[.lead]
+This is **Lab 2 of 2** in the Image Mode LAMP series. Lab 1 taught fast development with volume mounts. This lab takes the same application and ships it as an **immutable bootable image** you deploy as a VM.
 
-Development and production have different needs. Development needs fast iteration (volume mounts). Production needs immutability (baked-in files). This lab shows the production workflow.
+*Time: ~35 minutes | Difficulty: Intermediate | Series: Image Mode LAMP (Part 2 of 2)*
 
-*Time: ~35 minutes | Difficulty: Intermediate*
+image::series-lab1-to-lab2.svg[Diagram showing Lab 1 development workflow leading into Lab 2 production bootable image workflow,width=1000,align=center]
 
-== What You'll Build
+== What you should focus on
 
-You'll transform the LAMP application into a bootable disk image and deploy it as a VM.
+* **Same app, new packaging** — you are not rewriting the LAMP application; you are changing how it is delivered
+* **COPY, not mounts** — production files are baked into the image at build time
+* **Boot once, serve traffic** — MariaDB, Apache, PHP, and DB init start automatically
+* **Immutable value** — reproducible boots, versionable artifacts, no snowflake VM setup
 
-The VM boots with:
-- Operating system configured
-- Services started automatically (MariaDB, Apache)
-- Database initialized
-- Application deployed
-- Firewall rules applied
+== Series context
 
-No manual setup needed. Just boot and run.
+[IMPORTANT]
+====
+**Lab 1 (development)** builds the app with volume mounts for instant edits.  
+**Lab 2 (this lab)** packages that app with Image Mode into a bootable disk and validates it as a VM.
 
-== Why This Lab
+Lab 1 is recommended so the contrast is obvious. It is not required — this lab provides the application files if you start here.
+====
 
-Most Image Mode labs focus on platform engineering - building OS images with monitoring tools. This lab focuses on application deployment - packaging a database-backed web application as a bootable image.
+== Why Image Mode matters here
 
-You're not managing an OS, you're shipping an application.
+Most Image Mode content targets platform teams (OS hardening, updates, fleet management). This series targets **application developers**:
 
-== What You'll Learn
+* You still use Containerfiles and container tooling
+* You deliver a full OS + application artifact operations can boot anywhere a VM runs
+* You keep a clean split between **iterate fast** (Lab 1) and **ship immutable** (Lab 2)
 
-- Creating production Containerfiles (COPY vs volume mounts)
-- Building bootable images with `rhel-bootc` base
-- Creating systemd services for application initialization
-- Converting bootable images to VM disks with `bootc-image-builder`
-- Deploying and validating immutable applications
-- Understanding dev (mutable) vs prod (immutable) workflows
+image::dev-vs-prod-compare.svg[Comparison table of Lab 1 volume-mount development versus Lab 2 COPY and bootable production packaging,width=1000,align=center]
+
+== What you'll build
+
+A bootable disk image that starts a complete LAMP stack:
+
+* RHEL bootc operating system
+* MariaDB + Apache + PHP
+* Your app files copied into the image
+* systemd services enabled for first boot
+* Firewall/SELinux configured at build time
+
+No post-boot hand configuration. Boot the VM and validate.
+
+== Lab flow
+
+**Module 1 — Prepare production configuration**  
+Review app files and create the first-boot database init service.
+
+**Module 2 — Build the bootable image**  
+Write the production Containerfile, build `lamp-bootc`, convert to `disk.qcow2`.
+
+**Module 3 — Deploy and validate**  
+Start the VM, prove services and HTTP from the terminal, then enable the Showroom LAMP Application tab.
 
 == Prerequisites
 
-- Basic container knowledge
-- Familiarity with LAMP stack
-- Understanding of systemd services
+* Basic command-line and container familiarity
+* Comfortable with the idea of a LAMP stack (Linux, Apache, MariaDB, PHP)
+* Lab 1 completed **or** willingness to use the provided app files in this environment
 
-**Lab 1 recommended but not required:**
-- Lab 1 teaches the development workflow
-- This lab provides application files for you
-
-== Lab Flow
-
-**Module 1:** Review application files, create database initialization service
-
-**Module 2:** Write production Containerfile, build bootable image, create disk image
-
-**Module 3:** Deploy VM, verify services, test application
-
-== Development vs Production
-
-**Lab 1 - Development workflow:**
-- Volume mounts (`-v ~/app:/app`)
-- Mutable files (edit anytime)
-- Fast iteration (no rebuild)
-
-**Lab 2 - Production workflow:**
-- COPY directives (files baked in)
-- Immutable deployment (can't edit after build)
-- Bootable disk image (complete OS + app)
-
-Same application. Different strategies. Different trade-offs.
-
-Let's start.
+Let's start with Module 1.

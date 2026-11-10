@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="520" viewBox="0 0 1100 520" role="img" aria-labelledby="title desc">
+  <title id="title">Development versus production workflows</title>
+  <desc id="desc">Compare volume mounts in Lab 1 with COPY and bootable images in Lab 2</desc>
+  <rect width="1100" height="520" rx="18" fill="#F0F0F0"/>
+  <text x="40" y="46" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="700" fill="#151515">Same application. Different packaging.</text>
+  <text x="40" y="74" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#6A6E73">Choose the workflow that matches the stage of delivery</text>
+
+  <!-- headers -->
+  <rect x="40" y="100" width="490" height="56" rx="10" fill="#2B9AF3"/>
+  <text x="285" y="135" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#FFFFFF">Lab 1 · Development</text>
+  <rect x="570" y="100" width="490" height="56" rx="10" fill="#C9190B"/>
+  <text x="815" y="135" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#FFFFFF">Lab 2 · Production</text>
+
+  <!-- rows -->
+  <g font-family="Helvetica, Arial, sans-serif">
+    <!-- row labels background strips -->
+    <rect x="40" y="170" width="1020" height="58" fill="#FFFFFF"/>
+    <rect x="40" y="228" width="1020" height="58" fill="#FAFAFA"/>
+    <rect x="40" y="286" width="1020" height="58" fill="#FFFFFF"/>
+    <rect x="40" y="344" width="1020" height="58" fill="#FAFAFA"/>
+    <rect x="40" y="402" width="1020" height="58" fill="#FFFFFF"/>
+
+    <line x1="530" y1="170" x2="530" y2="460" stroke="#D2D2D2" stroke-width="2"/>
+    <line x1="40" y1="228" x2="1060" y2="228" stroke="#E7E7E7"/>
+    <line x1="40" y1="286" x2="1060" y2="286" stroke="#E7E7E7"/>
+    <line x1="40" y1="344" x2="1060" y2="344" stroke="#E7E7E7"/>
+    <line x1="40" y1="402" x2="1060" y2="402" stroke="#E7E7E7"/>
+
+    <text x="60" y="160" font-size="12" font-weight="700" fill="#6A6E73">TOPIC</text>
+    <text x="60" y="205" font-size="14" font-weight="700" fill="#151515">How files get in</text>
+    <text x="60" y="263" font-size="14" font-weight="700" fill="#151515">Change workflow</text>
+    <text x="60" y="321" font-size="14" font-weight="700" fill="#151515">What you deploy</text>
+    <text x="60" y="379" font-size="14" font-weight="700" fill="#151515">Best for</text>
+    <text x="60" y="437" font-size="14" font-weight="700" fill="#151515">Image Mode value</text>
+
+    <text x="250" y="205" font-size="14" fill="#4A4A4A">`-v host:container` mount</text>
+    <text x="250" y="263" font-size="14" fill="#4A4A4A">Edit file ’ see it immediately</text>
+    <text x="250" y="321" font-size="14" fill="#4A4A4A">App container (mutable)</text>
+    <text x="250" y="379" font-size="14" fill="#4A4A4A">Day-to-day coding</text>
+    <text x="250" y="437" font-size="14" fill="#4A4A4A">Speed for developers</text>
+
+    <text x="560" y="205" font-size="14" fill="#4A4A4A">`COPY` into Containerfile</text>
+    <text x="560" y="263" font-size="14" fill="#4A4A4A">Rebuild image to change app</text>
+    <text x="560" y="321" font-size="14" fill="#4A4A4A">Bootable disk / VM (immutable)</text>
+    <text x="560" y="379" font-size="14" fill="#4A4A4A">Consistent production boots</text>
+    <text x="560" y="437" font-size="14" fill="#4A4A4A">Reproducible app + OS artifact</text>
+  </g>
+
+  <text x="550" y="500" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#6A6E73">Image Mode lets application teams use container workflows for both iteration and production delivery</text>
+</svg>

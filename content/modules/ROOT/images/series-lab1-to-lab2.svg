@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="420" viewBox="0 0 1100 420" role="img" aria-labelledby="title desc">
+  <title id="title">Lab 1 to Lab 2 series flow</title>
+  <desc id="desc">Two-lab series: development with volume mounts, then production bootable image deployment</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F7F7F7"/>
+      <stop offset="100%" stop-color="#EEEEEE"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#4A4A4A"/>
+    </marker>
+  </defs>
+  <rect width="1100" height="420" rx="18" fill="url(#bg)"/>
+  <text x="40" y="48" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="700" fill="#151515">Image Mode for application developers</text>
+  <text x="40" y="78" font-family="Helvetica, Arial, sans-serif" font-size="15" fill="#6A6E73">Same LAMP application · Two workflows · Lab 2 of 2</text>
+
+  <!-- Lab 1 card -->
+  <rect x="40" y="110" width="430" height="250" rx="14" fill="#FFFFFF" stroke="#D2D2D2" stroke-width="2"/>
+  <rect x="40" y="110" width="430" height="48" rx="14" fill="#2B9AF3"/>
+  <rect x="40" y="134" width="430" height="24" fill="#2B9AF3"/>
+  <text x="60" y="142" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#FFFFFF">Lab 1 · Development</text>
+  <text x="60" y="185" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#151515">Volume mounts</text>
+  <text x="60" y="215" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#4A4A4A">Host files ’ container via -v</text>
+  <text x="60" y="240" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#4A4A4A">Edit code ’ refresh instantly</text>
+  <text x="60" y="265" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#4A4A4A">Mutable · fast iteration</text>
+  <text x="60" y="310" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#6A6E73">Goal: build and iterate on the app</text>
+  <text x="60" y="335" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#6A6E73">Runtime: container with systemd</text>
+
+  <!-- Arrow -->
+  <line x1="490" y1="235" x2="600" y2="235" stroke="#4A4A4A" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="520" y="220" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#C9190B">NEXT</text>
+
+  <!-- Lab 2 card -->
+  <rect x="620" y="110" width="440" height="250" rx="14" fill="#FFFFFF" stroke="#C9190B" stroke-width="3"/>
+  <rect x="620" y="110" width="440" height="48" rx="14" fill="#C9190B"/>
+  <rect x="620" y="134" width="440" height="24" fill="#C9190B"/>
+  <text x="640" y="142" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#FFFFFF">Lab 2 · Production (you are here)</text>
+  <text x="640" y="185" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#151515">COPY + bootable image</text>
+  <text x="640" y="215" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#4A4A4A">Files baked into the image</text>
+  <text x="640" y="240" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#4A4A4A">Build once ’ boot as a VM</text>
+  <text x="640" y="265" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#4A4A4A">Immutable · reproducible</text>
+  <text x="640" y="310" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#6A6E73">Goal: ship the app as a bootable artifact</text>
+  <text x="640" y="335" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#6A6E73">Runtime: complete OS + LAMP stack</text>
+</svg>

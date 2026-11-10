@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="340" viewBox="0 0 1100 340" role="img" aria-labelledby="title desc">
+  <title id="title">How the LAMP Application tab reaches the nested VM</title>
+  <desc id="desc">Showroom tab to OpenShift route to buildhost port 8080 through socat to the nested VM on port 80</desc>
+  <defs>
+    <marker id="arrow3" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#4A4A4A"/>
+    </marker>
+  </defs>
+  <rect width="1100" height="340" rx="18" fill="#F7F7F7"/>
+  <text x="40" y="42" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="700" fill="#151515">Why the LAMP Application tab needs a forwarder</text>
+  <text x="40" y="70" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#6A6E73">The VM is on a private libvirt network. Your laptop cannot open http://192.168.122.x directly.</text>
+
+  <rect x="40" y="110" width="200" height="120" rx="12" fill="#FFFFFF" stroke="#D2D2D2" stroke-width="2"/>
+  <text x="140" y="155" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#151515">Showroom tab</text>
+  <text x="140" y="185" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#4A4A4A">LAMP Application</text>
+  <text x="140" y="210" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#6A6E73">browser panel</text>
+
+  <line x1="250" y1="170" x2="300" y2="170" stroke="#4A4A4A" stroke-width="3" marker-end="url(#arrow3)"/>
+
+  <rect x="310" y="110" width="200" height="120" rx="12" fill="#FFFFFF" stroke="#D2D2D2" stroke-width="2"/>
+  <text x="410" y="155" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#151515">OpenShift route</text>
+  <text x="410" y="185" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#4A4A4A">webapp-&lt;guid&gt;</text>
+  <text x="410" y="210" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#6A6E73">to buildhost:8080</text>
+
+  <line x1="520" y1="170" x2="570" y2="170" stroke="#4A4A4A" stroke-width="3" marker-end="url(#arrow3)"/>
+
+  <rect x="580" y="110" width="220" height="120" rx="12" fill="#FFFFFF" stroke="#C9190B" stroke-width="3"/>
+  <text x="690" y="150" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#151515">buildhost :8080</text>
+  <text x="690" y="180" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#4A4A4A">socat forwarder</text>
+  <text x="690" y="205" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#C9190B">enable-lamp-webapp-forward</text>
+
+  <line x1="810" y1="170" x2="860" y2="170" stroke="#4A4A4A" stroke-width="3" marker-end="url(#arrow3)"/>
+
+  <rect x="870" y="110" width="190" height="120" rx="12" fill="#FFFFFF" stroke="#D2D2D2" stroke-width="2"/>
+  <text x="965" y="155" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#151515">lamp-vm :80</text>
+  <text x="965" y="185" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#4A4A4A">Apache + PHP</text>
+  <text x="965" y="210" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#6A6E73">192.168.122.x</text>
+
+  <rect x="40" y="260" width="1020" height="50" rx="10" fill="#FFF5F5" stroke="#F9D2D0"/>
+  <text x="60" y="290" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#151515">
+    <tspan font-weight="700">Do this after</tspan> host curl to $VM_IP succeeds, then run
+    <tspan font-weight="700" fill="#C9190B"> sudo enable-lamp-webapp-forward </tspan>
+    and refresh the tab.
+  </text>
+</svg>

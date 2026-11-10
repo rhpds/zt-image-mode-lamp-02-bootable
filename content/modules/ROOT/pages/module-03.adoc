@@ -1,19 +1,20 @@
-= Deploy and Validate the Bootable Application
+= Deploy and validate the bootable application
 
-Deploy your bootable LAMP image as a virtual machine, verify all services start automatically, and test the application in production mode.
+[.lead]
+**Goal:** Boot the disk image as a VM, prove the LAMP stack comes up on its own, then enable the Showroom LAMP Application tab.
 
-This is the production workflow - boot once, everything works.
+This is the pay-off for Lab 2: **boot once, serve the app** — no manual post-boot setup.
 
 *Time: ~10 minutes*
 
 [IMPORTANT]
 ====
-**Prerequisite:** Module 02 must be complete before starting this module. The disk image (`~/lamp-bootc/output/qcow2/disk.qcow2`) must exist. If you haven't completed Module 02, go back and run it first (takes 10-15 minutes).
+**Prerequisite:** Module 2 must be complete. `~/lamp-bootc/output/qcow2/disk.qcow2` must exist. If it does not, finish Module 2 first (disk build can take 10–15 minutes).
 ====
 
-== Copy the Disk Image to libvirt Storage
+== Copy the disk image to libvirt storage
 
-Move the disk image to libvirt's default storage pool:
+Move the disk image into libvirt's default pool:
 
 [source,bash,role=execute]
 ----
@@ -261,13 +262,15 @@ curl -s http://$VM_IP | grep -E "Hello, World|Welcome to LAMP|production bootabl
 
 The application is reachable from the buildhost. That proves Apache, PHP, and MariaDB are working end to end.
 
-image::lamp-app-browser.png[LAMP Application page showing database greetings,800,align="center"]
+image::lamp-app-browser.png[LAMP Application page showing database greetings,width=1000,align=center]
 
-== Enable the LAMP Application Tab
+== Enable the LAMP Application tab
 
-The `curl` checks above already prove the app works. To also view it in the Showroom **LAMP Application** tab, forward buildhost port 8080 to the nested VM.
+Terminal `curl` already proved the app. The Showroom **LAMP Application** tab needs one more step because the VM sits on a private libvirt network.
 
-Run this on the **buildhost** (prompt must be `[rhel@buildhost ~]$`, not `[core@localhost ~]$`), and only after `curl http://$VM_IP` succeeded:
+image::lamp-tab-forwarder.svg[Diagram of Showroom tab to OpenShift route to buildhost socat forwarder to nested VM port 80,width=1000,align=center]
+
+Run this on the **buildhost** (prompt must be `[rhel@buildhost ~]$`, not inside the VM), and only after `curl http://$VM_IP` succeeded:
 
 [source,bash,role=execute]
 ----

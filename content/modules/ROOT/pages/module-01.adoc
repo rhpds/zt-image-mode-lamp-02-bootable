@@ -1,75 +1,78 @@
-= Prepare Production Configuration
+= Prepare production configuration
 
-Your LAMP application works great in development with volume mounts. Now transform it for production - files baked into the image, packaged as a bootable VM.
-
-In this module, you'll review the application files and create the systemd service that initializes the database on first boot.
+[.lead]
+**Goal:** Confirm the Lab 1 application files are ready, then add the systemd unit that initializes MariaDB automatically on first boot.
 
 *Time: ~8 minutes*
 
-== Review the Application Files
+[NOTE]
+====
+**Series reminder:** In Lab 1 these files lived on the host and were volume-mounted. In Lab 2 they become build inputs that get **COPY**'d into an immutable image.
+====
 
-Your development environment created three application files. In a real workflow, you'd have written these yourself (Lab 1). Here they're provided so you can focus on production packaging.
+== Review the application files
 
-Check what's available:
+These three files are the same application surface from Lab 1. Here they are provided so you can focus on production packaging.
 
 [source,bash,role=execute]
 ----
 ls -lh ~/lamp-bootc/app/
 ----
 
-*Expected output:*
+*You should see:*
 
 ----
 total 12K
--rw-r--r-- 1 rhel rhel  448 Jan 15 10:30 db-setup.sql
--rw-r--r-- 1 rhel rhel 2.1K Jan 15 10:30 index.php
--rw-r--r-- 1 rhel rhel  287 Jan 15 10:30 myapp.conf
+-rw-r--r-- 1 rhel rhel  448 ... db-setup.sql
+-rw-r--r-- 1 rhel rhel 2.1K ... index.php
+-rw-r--r-- 1 rhel rhel  287 ... myapp.conf
 ----
 
-These are the same files from Lab 1:
-- `db-setup.sql` - database schema and seed data
-- `index.php` - PHP application that queries the database
-- `myapp.conf` - Apache virtual host configuration
+Focus on what each file does:
 
-Review the database schema:
+* `db-setup.sql` — schema + seed greetings
+* `index.php` — PHP page that reads from MariaDB
+* `myapp.conf` — Apache virtual host for the app
+
+Skim the database setup:
 
 [source,bash,role=execute]
 ----
 cat ~/lamp-bootc/app/db-setup.sql
 ----
 
-You'll see the `CREATE DATABASE`, `CREATE USER`, `CREATE TABLE`, and `INSERT` statements that set up the database.
-
-Review the PHP application:
+Skim the PHP entrypoint:
 
 [source,bash,role=execute]
 ----
 head -20 ~/lamp-bootc/app/index.php
 ----
 
-Notice the database connection parameters - these will work inside the bootable VM because the database runs locally.
+The DB connection settings assume MariaDB is local to the future VM — that matches the production image layout.
 
-== Understand the Production Workflow Difference
+== Focus: mounts vs COPY
 
-In Lab 1, you used **volume mounts**:
-- Files lived on your host
-- Container accessed them via mount
-- Edit anytime, changes appeared instantly
-- Mutable (great for development)
+image::dev-vs-prod-compare.svg[Side-by-side comparison of Lab 1 volume mounts versus Lab 2 COPY-based immutable packaging,width=1000,align=center]
 
-In Lab 2, you'll use **COPY directives**:
-- Files baked into the image at build time
-- No volume mounts, no host access
-- Can't edit after build (immutable)
-- Perfect for production
+**Lab 1 used volume mounts**
 
-Same application, different workflow. The production Containerfile will `COPY` these files instead of mounting them.
+* Files stayed on the host
+* Container read them through `-v`
+* Great for editing and refreshing quickly
 
-== Create the Database Initialization Service
+**Lab 2 uses COPY**
 
-In development, you manually initialized MariaDB. In production, the database needs to initialize automatically on first boot.
+* Files are baked into the image at build time
+* No host mount dependency at runtime
+* Changes require a new image build — that is the production trade-off
 
-Create a systemd service that runs once:
+Same application. Different delivery contract.
+
+== Create the database initialization service
+
+In Lab 1 you could initialize the database interactively. In production, first boot must do that automatically.
+
+Create a oneshot systemd service:
 
 [source,bash,role=execute]
 ----
@@ -89,37 +92,29 @@ WantedBy=multi-user.target
 EOF
 ----
 
-This service:
-- Runs after MariaDB starts (`After=mariadb.service`)
-- Retries up to 30 times if MariaDB isn't ready yet (handles boot timing)
-- Executes the SQL script once (`Type=oneshot`)
-- Won't run again on subsequent boots (`RemainAfterExit=yes`)
-- Runs automatically on boot (`WantedBy=multi-user.target`)
+What to notice:
 
-Verify the service file was created:
+* `After=` / `Requires=` wait for MariaDB
+* Retry loop handles boot timing
+* `Type=oneshot` runs setup once
+* `WantedBy=multi-user.target` enables it on boot
+
+Verify the file:
 
 [source,bash,role=execute]
 ----
 cat ~/lamp-bootc/mariadb-setup.service
 ----
 
-== Understand the Production Image Structure
+== Takeaway before Module 2
 
-Your production Containerfile will:
+Your production image will:
 
-1. Start from `rhel-bootc:10.1` (bootable base, not ubi-init)
-2. Install the LAMP stack (MariaDB, Apache, PHP)
-3. **COPY** application files into the image (not volume mount)
-4. **COPY** the systemd service into the image
-5. Enable all services to start on boot
-6. Configure SELinux and firewall
+1. Start from `rhel-bootc` (bootable OS base)
+2. Install LAMP packages
+3. **COPY** app files and this systemd unit into the image
+4. Enable services so first boot is ready to serve
 
-The key difference from Lab 1: files are **inside the image**, not mounted from outside.
+**Value:** one artifact that is immutable, reproducible, and portable across VM targets.
 
-This makes the image:
-- Immutable (can't edit files after build)
-- Reproducible (every deployment is identical)
-- Portable (entire app packaged in one artifact)
-- Versionable (tag the image, deploy specific versions)
-
-Next module: write the production Containerfile and build the bootable image.
+Next: write the Containerfile and build the bootable disk.
