@@ -69,14 +69,19 @@ No post-boot hand configuration. Boot the VM and validate.
 
 == Lab Flow
 
-**Module 1 — Prepare production configuration**  
+**Module 1 — Prepare Production Configuration**  
 Review app files and create the first-boot database init service.
 
-**Module 2 — Build the bootable image**  
+**Module 2 — Build the Bootable Image**  
 Write the production Containerfile, build `lamp-bootc`, convert to `disk.qcow2`.
 
-**Module 3 — Deploy and validate**  
+**Module 3 — Deploy and Validate**  
 Start the VM, prove services and HTTP from the terminal, then enable the Showroom LAMP Application tab.
+
+[NOTE]
+====
+The **LAMP Application** tab may show "Application is not available" until Module 3. That is normal — Module 1 explains why.
+====
 
 == Prerequisites
 
