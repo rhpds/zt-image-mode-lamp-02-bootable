@@ -12,7 +12,7 @@ In Lab 1 you built and iterated on a LAMP app with **volume mounts**. In this la
 .From Lab 1 development to Lab 2 production
 image::series-lab1-to-lab2.svg[Diagram showing Lab 1 development workflow leading into Lab 2 production bootable image workflow,width=1000,align=center]
 
-== Quick recap of Lab 1
+== Quick Recap of Lab 1
 
 Here is what you already did (or what Lab 1 covers if you are joining here):
 
@@ -23,7 +23,7 @@ Here is what you already did (or what Lab 1 covers if you are joining here):
 
 **You are not starting over.** The application idea is the same. What changes is the **delivery model**.
 
-== How we transition into Lab 2
+== How We Transition into Lab 2
 
 | Lab 1 (done / prior) | Lab 2 (this lab) |
 |---|---|
@@ -40,14 +40,14 @@ image::dev-vs-prod-compare.svg[Comparison table of Lab 1 volume-mount developmen
 Lab 1 is recommended so this contrast is obvious. It is **not required** — this environment provides the application files if you start on Lab 2.
 ====
 
-== What you should focus on
+== What You Should Focus On
 
 * **Same app, new packaging** — you are changing how the app is shipped, not rewriting it
 * **COPY, not mounts** — production files are baked in at build time
 * **Boot once, serve traffic** — MariaDB, Apache, PHP, and DB init start automatically
 * **Immutable value** — reproducible boots, versionable artifacts, no snowflake VM setup
 
-== Why Image Mode matters here
+== Why Image Mode Matters Here
 
 Most Image Mode content targets platform teams (OS hardening, updates, fleets). This series targets **application developers**:
 
@@ -55,7 +55,7 @@ Most Image Mode content targets platform teams (OS hardening, updates, fleets). 
 * You deliver OS + application as one bootable artifact
 * Lab 1 optimized for speed; Lab 2 optimizes for a trusted production boot
 
-== What you'll build
+== What You'll Build
 
 A bootable disk image that starts a complete LAMP stack:
 
@@ -67,7 +67,7 @@ A bootable disk image that starts a complete LAMP stack:
 
 No post-boot hand configuration. Boot the VM and validate.
 
-== Lab flow
+== Lab Flow
 
 **Module 1 — Prepare production configuration**  
 Review app files and create the first-boot database init service.

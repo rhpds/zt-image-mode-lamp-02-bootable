@@ -1,4 +1,4 @@
-* xref:index.adoc[Lab 2 overview]
-* xref:module-01.adoc[Module 1: Prepare production configuration]
-* xref:module-02.adoc[Module 2: Build the bootable image]
-* xref:module-03.adoc[Module 3: Deploy and validate]
+* xref:index.adoc[Lab 2 Overview]
+* xref:module-01.adoc[Module 1: Prepare Production Configuration]
+* xref:module-02.adoc[Module 2: Build the Bootable Image]
+* xref:module-03.adoc[Module 3: Deploy and Validate]

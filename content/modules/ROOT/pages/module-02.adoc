@@ -1,4 +1,4 @@
-= Build the bootable image
+= Build the Bootable Image
 
 [.lead]
 **Goal:** Write the production Containerfile, build a bootable container image, then convert it to a VM disk (`disk.qcow2`).
@@ -7,7 +7,7 @@
 
 image::bootc-build-pipeline.svg[Four-step pipeline from Containerfile to bootc image to qcow2 disk to VM,width=1000,align=center]
 
-== Write the production Containerfile
+== Write the Production Containerfile
 
 Create the production Containerfile:
 
@@ -48,7 +48,7 @@ EOF
 2. **`COPY`** — application is immutable content inside the image
 3. **`systemctl enable`** — first boot starts MariaDB, Apache, and DB init
 
-== Build the bootable container image
+== Build the Bootable Container Image
 
 Build as root so later tooling can use the image:
 
@@ -82,7 +82,7 @@ localhost/lamp-bootc  latest      ...           ...                 ~2 GB
 
 The size is large because this is OS + LAMP + app, not a tiny app-only container.
 
-== Configure the image-builder user
+== Configure the Image-Builder User
 
 bootc-image-builder needs a VM login user:
 
@@ -98,7 +98,7 @@ EOF
 
 You will SSH as `core` / `redhat` in Module 3.
 
-== Build the disk image
+== Build the Disk Image
 
 Prepare output storage:
 
@@ -138,7 +138,7 @@ In real pipelines this runs in CI once per release, not on every developer save.
 
 While it runs, remember the Lab 1 contrast: Lab 1 deployed a mutable app container; Lab 2 is producing a **bootable disk** that carries OS + app together.
 
-== Confirm the disk artifact
+== Confirm the Disk Artifact
 
 [source,bash,role=execute]
 ----

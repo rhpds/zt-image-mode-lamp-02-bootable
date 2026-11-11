@@ -1,4 +1,4 @@
-= Prepare production configuration
+= Prepare Production Configuration
 
 [.lead]
 **Goal:** Confirm the Lab 1 application files are ready, then add the systemd unit that initializes MariaDB automatically on first boot.
@@ -10,7 +10,7 @@
 **Series reminder:** In Lab 1 these files lived on the host and were volume-mounted. In Lab 2 they become build inputs that get **COPY**'d into an immutable image.
 ====
 
-== Review the application files
+== Review the Application Files
 
 These three files are the same application surface from Lab 1. Here they are provided so you can focus on production packaging.
 
@@ -50,7 +50,7 @@ head -20 ~/lamp-bootc/app/index.php
 
 The DB connection settings assume MariaDB is local to the future VM — that matches the production image layout.
 
-== Focus: mounts vs COPY
+== Focus: Mounts vs COPY
 
 image::dev-vs-prod-compare.svg[Side-by-side comparison of Lab 1 volume mounts versus Lab 2 COPY-based immutable packaging,width=1000,align=center]
 
@@ -68,7 +68,7 @@ image::dev-vs-prod-compare.svg[Side-by-side comparison of Lab 1 volume mounts ve
 
 Same application. Different delivery contract.
 
-== Create the database initialization service
+== Create the Database Initialization Service
 
 In Lab 1 you could initialize the database interactively. In production, first boot must do that automatically.
 
@@ -106,7 +106,7 @@ Verify the file:
 cat ~/lamp-bootc/mariadb-setup.service
 ----
 
-== Takeaway before Module 2
+== Takeaway Before Module 2
 
 Your production image will:
 
