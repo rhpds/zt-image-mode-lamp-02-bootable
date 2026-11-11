@@ -10,6 +10,17 @@
 **Series reminder:** In Lab 1 these files lived on the host and were volume-mounted. In Lab 2 they become build inputs that get **COPY**'d into an immutable image.
 ====
 
+== About the LAMP Application Tab
+
+You may already see a **LAMP Application** tab in Showroom. If you open it during Module 1 or Module 2, it will look unavailable. **That is expected.**
+
+.Expected LAMP Application tab before the VM forwarder is enabled
+image::lamp-application-is-not-available.png[Showroom page stating Application is not available because the endpoint is not serving requests yet,width=900,align=center]
+
+**Why:** the tab talks to a route on the buildhost. Your LAMP app does not exist there yet — you still need to build the bootable image (Module 2), boot the VM (Module 3), and run `sudo enable-lamp-webapp-forward`. Until then, the route has nothing healthy to serve.
+
+**What to do for now:** ignore that tab and stay in the terminal. You will enable and use it in Module 3.
+
 == Review the Application Files
 
 These three files are the same application surface from Lab 1. Here they are provided so you can focus on production packaging.
