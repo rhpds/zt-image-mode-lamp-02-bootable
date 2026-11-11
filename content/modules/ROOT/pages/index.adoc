@@ -2,33 +2,37 @@
 
 == Welcome to Lab 2!
 
-Welcome back. You are in **Lab 2 of 2** in the Image Mode LAMP series for application developers.
+Welcome back — you're in the right place. This is **Lab 2 of 2** in the Image Mode series for application developers.
 
-[.lead]
-In Lab 1 you built and iterated on a LAMP app with **volume mounts**. In this lab you take that same application and package it for production as an **immutable bootable image**, then boot it as a VM.
+In **Lab 1**, you built a real LAMP application (Linux, Apache, MariaDB, PHP) and used **volume mounts** so you could edit files on the host and see changes instantly. That workflow is fast and mutable — perfect for development.
 
-*Time: ~35 minutes | Difficulty: Intermediate | Series: Image Mode LAMP (Part 2 of 2)*
+In **Lab 2 (this lab)**, you take that *same* application and change how it is packaged. Instead of mounting files at runtime, you **`COPY`** them into a bootable Image Mode image, turn that image into a VM disk, and prove the stack starts automatically when the VM boots.
 
 .From Lab 1 development to Lab 2 production
 image::series-lab1-to-lab2.svg[Diagram showing Lab 1 development workflow leading into Lab 2 production bootable image workflow,width=1000,align=center]
 
-== Quick Recap of Lab 1
+**Lab 1 recap (what you already covered):**
 
-Here is what you already did (or what Lab 1 covers if you are joining here):
+* Built a systemd-enabled LAMP development container
+* Created the app files (SQL, PHP, Apache config)
+* Used volume mounts for instant iteration
+* Learned why mounts are great for day-to-day coding
 
-* Built a **LAMP** stack (Linux, Apache, MariaDB, PHP) in a container
-* Added app files: SQL schema, PHP page, Apache config
-* Used **volume mounts** so edits on the host showed up immediately
-* Learned the trade-off: fast iteration, but mutable and not a sealed production artifact
+**Lab 2 transition (what you will do now):**
 
-**You are not starting over.** The application idea is the same. What changes is the **delivery model**.
+* Treat those app files as production build inputs
+* Bake them into an immutable `rhel-bootc` image with `COPY`
+* Convert the image to a bootable `qcow2` disk
+* Deploy as a VM and validate the app — including the LAMP Application tab in Module 3
 
-== How We Transition into Lab 2
+*Time: ~35 minutes | Difficulty: Intermediate | Series: Image Mode LAMP (Part 2 of 2)*
 
-| Lab 1 (done / prior) | Lab 2 (this lab) |
+== Same App, Different Packaging
+
+| Lab 1 | Lab 2 (you are here) |
 |---|---|
 | Volume mounts (`-v`) | `COPY` into the image |
-| Edit → refresh | Rebuild image to change app |
+| Edit → refresh | Rebuild image to change the app |
 | Mutable container workflow | Immutable bootable disk / VM |
 | Optimize for developer speed | Optimize for reproducible boots |
 
@@ -49,7 +53,7 @@ Lab 1 is recommended so this contrast is obvious. It is **not required** — thi
 
 == Why Image Mode Matters Here
 
-Most Image Mode content targets platform teams (OS hardening, updates, fleets). This series targets **application developers**:
+**Image Mode for RHEL** lets you build the operating system as a container image. Most Image Mode labs target platform engineers. This series targets **application developers**:
 
 * You still use Containerfiles and container tooling
 * You deliver OS + application as one bootable artifact

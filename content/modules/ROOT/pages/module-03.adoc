@@ -1,5 +1,7 @@
 = Deploy and Validate the Bootable Application
 
+*Lab 2 of 2, Module 3*
+
 [.lead]
 **Goal:** Boot the disk image as a VM, prove the LAMP stack comes up on its own, then enable the Showroom LAMP Application tab.
 

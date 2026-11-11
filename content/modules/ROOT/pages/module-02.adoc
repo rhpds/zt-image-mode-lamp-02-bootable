@@ -1,5 +1,7 @@
 = Build the Bootable Image
 
+*Lab 2 of 2, Module 2*
+
 [.lead]
 **Goal:** Write the production Containerfile, build a bootable container image, then convert it to a VM disk (`disk.qcow2`).
 

@@ -1,5 +1,7 @@
 = Prepare Production Configuration
 
+*Lab 2 of 2, Module 1*
+
 [.lead]
 **Goal:** Confirm the Lab 1 application files are ready, then add the systemd unit that initializes MariaDB automatically on first boot.
 
